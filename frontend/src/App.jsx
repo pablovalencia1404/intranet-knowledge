@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './componentes/Navbar';
+import StatsGrid from './componentes/StatsGrid';
 import SocialWall from './componentes/SocialWall';
 import DocumentManager from './componentes/DocumentManager';
 import UserProfile from './componentes/UserProfile';
@@ -22,6 +23,12 @@ function App() {
         <Navbar />
         <main className="max-w-5xl mx-auto p-6">
           <Routes>
+            <Route path="/" element={
+              <>
+                <StatsGrid /> 
+                <SocialWall />
+              </>
+            } />
             <Route path="/" element={<SocialWall />} />
             <Route path="/social" element={<SocialWall />} />
             <Route path="/documentos" element={<DocumentManager />} />
