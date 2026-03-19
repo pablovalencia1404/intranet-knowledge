@@ -9,3 +9,23 @@ services:
     volumes:
       - ./frontend/dist:/usr/share/nginx/html
       - ./nginx/conf.d:/etc/nginx/conf.d
+
+# Base de Datos 
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb_data
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/db:/data/db
+
+  # API 
+  backend:
+    build: . 
+    container_name: api_backend
+    ports:
+      - "8080:80" 
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - mongodb
