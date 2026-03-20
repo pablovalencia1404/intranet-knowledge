@@ -3,7 +3,7 @@ header("Content-Type: application/json");
 require_once __DIR__ . '/../../config_bbdd.php';
 
 $db = conectarDB();
-$coleccion = $db->usuarios;
+$coleccion = $db->Usuarios;
 
 // Borramos lo que haya para no duplicar en las pruebas
 $coleccion->deleteMany([]);
