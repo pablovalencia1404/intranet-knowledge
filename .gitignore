@@ -5,6 +5,9 @@ db/
 # NO subir la carpeta de datos vivos de Docker (si la tienes)
 mongodb_data/
 db_data/
+vendor/
+Proyecto_backend/
+.DS_Store
 
 # SÍ queremos subir el dump, así que NO debe estar aquí
 # (Si ves "dump/" en este archivo, bórralo)
