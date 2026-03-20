@@ -24,3 +24,6 @@ RUN a2enmod rewrite
 
 # Copiamos los archivos de tu PC al contenedor
 COPY . /var/www/html/
+
+# Asegura que vendor/autoload.php exista en la imagen final
+RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
