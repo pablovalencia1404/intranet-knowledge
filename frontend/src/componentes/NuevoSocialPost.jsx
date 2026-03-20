@@ -16,7 +16,7 @@ export default function NuevoSocialPost({ onPostCreated }) {
     if (image) formData.append('image', image);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/social`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/social/crear_p.php`, {
         method: 'POST',
         body: formData,
       });

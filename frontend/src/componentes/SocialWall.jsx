@@ -7,12 +7,12 @@ export default function SocialWall() {
 
   // 1. Función para pedir los posts al servidor
   const cargarPosts = () => {
-    const url = import.meta.env.VITE_API_URL;
     
-    fetch(`${url}/social`)
+    
+    fetch(`${import.meta.env.VITE_API_URL}/social`)
       .then(res => res.json())
-      .then(data => {
-        setPosts(data);
+        .then(data => {
+        setPosts(data.foro || []); // <--- Importante: data.foro
         setCargando(false);
       })
       .catch(err => {
