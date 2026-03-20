@@ -6,6 +6,9 @@ services:
     container_name: frontend
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
 
 # Base de Datos 
   mongodb:
@@ -15,6 +18,8 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+      - ./dum:/docker-entrypoint-initdb.d/dump:ro
+      - ./mongodb/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
 
   # API 
   backend:
