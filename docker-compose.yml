@@ -29,8 +29,6 @@ services:
     container_name: api_backend
     ports:
       - "8080:80" 
-    volumes:
-      - .:/var/www/html
     depends_on:
       - mongodb
 
