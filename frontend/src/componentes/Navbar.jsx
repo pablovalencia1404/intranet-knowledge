@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 
 export default function Navbar({ usuario, onLogout }) {
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost/api/usuarios/logout_u.php', {
+      await fetch(`${API_URL}/usuarios/logout_u.php`, {
         method: 'POST',
         credentials: 'include',
       });

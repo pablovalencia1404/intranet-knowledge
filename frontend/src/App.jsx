@@ -24,6 +24,7 @@ const RutaProtegida = ({ element, usuario }) => {
 };
 
 function App() {
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
 
@@ -31,7 +32,7 @@ function App() {
     // Verificar sesión al cargar
     const verificarSesion = async () => {
       try {
-        const respuesta = await fetch('http://localhost/api/usuarios/verificar_sesion.php', {
+        const respuesta = await fetch(`${API_URL}/usuarios/verificar_sesion.php`, {
           credentials: 'include',
         });
         const datos = await respuesta.json();

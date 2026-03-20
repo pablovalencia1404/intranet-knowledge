@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Registrarse() {
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [contraseña, setContraseña] = useState('');
@@ -29,7 +30,7 @@ export default function Registrarse() {
     setCargando(true);
 
     try {
-      const respuesta = await fetch('http://localhost/api/usuarios/crear_u.php', {
+      const respuesta = await fetch(`${API_URL}/usuarios/crear_u.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [email, setEmail] = useState('');
   const [contraseña, setContraseña] = useState('');
   const [error, setError] = useState('');
@@ -14,7 +15,7 @@ export default function Login() {
     setCargando(true);
 
     try {
-      const respuesta = await fetch('http://localhost/api/usuarios/login_u.php', {
+      const respuesta = await fetch(`${API_URL}/usuarios/login_u.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
