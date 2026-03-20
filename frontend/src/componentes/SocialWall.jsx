@@ -1,45 +1,96 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import NuevoSocialPost from './NuevoSocialPost'; // 👈 Asegúrate de que el nombre coincida
 
 export default function SocialWall() {
-  const [mensaje, setMensaje] = useState("");
-  const [posts, setPosts] = useState([
-    { id: 1, user: "Ana Rodríguez", dept: "RRHH", text: "¡Recordad el desayuno del viernes! 🥐" }
-  ]);
+  const [posts, setPosts] = useState([]);
+  const [cargando, setCargando] = useState(true);
 
-  const publicar = () => {
-    if (mensaje.trim() === "") return;
-    const nuevoPost = { id: Date.now(), user: "Alfonso", dept: "Frontend Dev", text: mensaje };
-    setPosts([nuevoPost, ...posts]);
-    setMensaje("");
+  // 1. Función para pedir los posts al servidor
+  const cargarPosts = () => {
+    
+    
+    fetch(`${import.meta.env.VITE_API_URL}/social`)
+      .then(res => res.json())
+        .then(data => {
+        setPosts(data.foro || []); // <--- Importante: data.foro
+        setCargando(false);
+      })
+      .catch(err => {
+        console.error("❌ Error cargando el muro:", err);
+        setCargando(false);
+      });
   };
 
+  // 2. Se ejecuta nada más abrir la web
+  useEffect(() => {
+    cargarPosts();
+  }, []);
+
+  if (cargando) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">Conectando con el equipo...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden my-6">
-      <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
-        <span className="text-xl">📣</span>
-        <h3 className="font-bold text-gray-800">Muro de Actualidad</h3>
+    <div className="max-w-2xl mx-auto mt-6 pb-20">
+      
+      {/* SECCIÓN A: Formulario para publicar nuevo contenido */}
+      <NuevoSocialPost onPostCreated={cargarPosts} />
+
+      <div className="flex items-center justify-between mb-8">
+        <h3 className="font-black text-2xl text-gray-800 tracking-tighter">📢 Novedades</h3>
+        <span className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold uppercase">En vivo</span>
       </div>
-      <div className="p-4">
-        <textarea 
-          className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-          placeholder="¿Qué novedades hay?"
-          value={mensaje}
-          onChange={(e) => setMensaje(e.target.value)}
-          rows="3"
-        />
-        <div className="flex justify-end mt-2">
-          <button onClick={publicar} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full font-medium text-sm transition-all shadow-sm">
-            Publicar novedad
-          </button>
-        </div>
-      </div>
-      <div className="p-4 space-y-4">
-        {posts.map(post => (
-          <div key={post.id} className="bg-blue-50/40 p-4 rounded-xl border border-blue-100/50">
-            <p className="text-sm font-bold text-gray-900">{post.user} <span className="text-xs font-normal text-gray-400">• {post.dept}</span></p>
-            <p className="text-gray-700 text-sm mt-2">{post.text}</p>
+      
+      {/* SECCIÓN B: Listado de publicaciones */}
+      <div className="space-y-6">
+        {posts.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+            <span className="text-4xl">🏜️</span>
+            <p className="text-gray-400 mt-2 text-sm">Parece que nadie ha publicado nada todavía.</p>
           </div>
-        ))}
+        ) : (
+          posts.map(post => (
+            <div key={post.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group">
+              {/* Cabecera del Post: Usuario y Fecha */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-700 rounded-full flex items-center justify-center text-white font-bold shadow-sm group-hover:scale-110 transition-transform">
+                  {post.user ? post.user[0].toUpperCase() : '?'}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">{post.user}</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{post.date || 'Reciente'}</p>
+                </div>
+              </div>
+              
+              {/* Cuerpo del Post: Texto */}
+              <p className="text-gray-700 leading-relaxed text-sm mb-4">
+                {post.content}
+              </p>
+              
+              {/* Imagen del Post (si existe) */}
+              {post.image && (
+                <div className="relative overflow-hidden rounded-xl border border-gray-50">
+                   <img 
+                    src={post.image} 
+                    className="w-full h-auto max-h-[400px] object-cover hover:scale-[1.02] transition-transform duration-500" 
+                    alt="Imagen de la publicación" 
+                  />
+                </div>
+              )}
+
+              {/* Pie del Post: Interacción básica */}
+              <div className="mt-4 pt-4 border-t border-gray-50 flex gap-4 text-gray-400">
+                <button className="text-[11px] font-bold hover:text-blue-600 transition-colors">👍 Me gusta</button>
+                <button className="text-[11px] font-bold hover:text-blue-600 transition-colors">💬 Comentar</button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
