@@ -4,6 +4,9 @@ FROM php:8.2-apache
 # Instalamos las librerías necesarias para que PHP pueda hablar con MongoDB
 RUN apt-get update && apt-get install -y \
     libssl-dev \
+    git \
+    unzip \
+    zip \
     && pecl install mongodb \
     && docker-php-ext-enable mongodb
 
@@ -13,7 +16,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 # Instalamos dependencias PHP antes de copiar todo el codigo para aprovechar cache
-COPY composer.json ./
+COPY composer.json composer.lock* ./
 RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
 # Habilitamos el módulo de reescritura de Apache (útil para APIs)
