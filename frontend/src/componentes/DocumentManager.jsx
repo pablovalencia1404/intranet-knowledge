@@ -1,22 +1,31 @@
 import React, { useState, useEffect } from 'react';
 
 export default function DocumentManager() {
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [docs, setDocs] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
 
   const cargarDocs = () => {
-    // 👈 Apuntamos a la ruta real de Raúl
-    fetch(`${import.meta.env.VITE_API_URL}/documentos/leer_d.php`)
+    setError('');
+    fetch(`${API_URL}/documentos/leer_d.php`, {
+      credentials: 'include',
+    })
       .then(res => res.json())
       .then(data => {
-        // Raúl suele enviar los datos en una clave (como "foro" antes)
-        // Si él los envía directamente, usa: setDocs(data);
-        // Si usa una clave "docs", usa: setDocs(data.docs || []);
-        setDocs(data.docs || data); 
+        const lista = Array.isArray(data)
+          ? data
+          : Array.isArray(data.docs)
+            ? data.docs
+            : Array.isArray(data.datos)
+              ? data.datos
+              : [];
+        setDocs(lista);
         setCargando(false);
       })
       .catch(err => {
         console.error("Error cargando documentos:", err);
+        setError('No se pudieron cargar los documentos.');
         setCargando(false);
       });
   };
@@ -31,6 +40,10 @@ export default function DocumentManager() {
       <h2 className="text-xl font-black mb-6">📁 Biblioteca de Archivos</h2>
       {cargando ? (
         <p className="animate-pulse text-gray-400 text-xs">Buscando archivos...</p>
+      ) : error ? (
+        <p className="text-sm text-red-600">{error}</p>
+      ) : docs.length === 0 ? (
+        <p className="text-sm text-gray-500">No hay documentos disponibles.</p>
       ) : (
         <div className="space-y-2">
           {docs.map((doc, index) => (
