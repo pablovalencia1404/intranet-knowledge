@@ -75,7 +75,7 @@ function App() {
         {usuario && <Navbar usuario={usuario} onLogout={handleLogout} />}
         <main className={usuario ? "max-w-5xl mx-auto p-6" : ""}>
           <Routes>
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Login onLogin={setUsuario} />} />
             <Route path="/registrarse" element={<Registrarse />} />
             
             <Route path="/" element={

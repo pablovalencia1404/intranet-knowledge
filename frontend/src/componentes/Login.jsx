@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
-export default function Login() {
+export default function Login({ onLogin }) {
   const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [email, setEmail] = useState('');
   const [contraseña, setContraseña] = useState('');
@@ -32,9 +32,11 @@ export default function Login() {
       if (datos.status === 'success') {
         // Guardar info en localStorage
         localStorage.setItem('usuario', JSON.stringify(datos.usuario));
+        if (onLogin) {
+          onLogin(datos.usuario);
+        }
         // Redirigir al inicio
         navigate('/');
-        window.location.reload();
       } else {
         setError(datos.mensaje || 'Error en el inicio de sesión');
       }
@@ -97,9 +99,9 @@ export default function Login() {
 
         <p className="text-center text-gray-600 mt-6 text-sm">
           ¿No tienes cuenta?{' '}
-          <a href="/registrarse" className="text-blue-600 hover:underline font-semibold">
+          <Link to="/registrarse" className="text-blue-600 hover:underline font-semibold">
             Regístrate aquí
-          </a>
+          </Link>
         </p>
       </div>
     </div>

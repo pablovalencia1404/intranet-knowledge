@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Registrarse() {
   const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
@@ -146,9 +146,9 @@ export default function Registrarse() {
 
         <p className="text-center text-gray-600 mt-6 text-sm">
           ¿Ya tienes cuenta?{' '}
-          <a href="/login" className="text-blue-600 hover:underline font-semibold">
+          <Link to="/login" className="text-blue-600 hover:underline font-semibold">
             Inicia sesión aquí
-          </a>
+          </Link>
         </p>
       </div>
     </div>
