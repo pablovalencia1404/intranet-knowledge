@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import NuevoSocialPost from './NuevoSocialPost'; // 👈 Asegúrate de que el nombre coincida
+import NuevoSocialPost from './NuevoSocialPost';
 
 export default function SocialWall() {
   const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
@@ -26,7 +26,7 @@ export default function SocialWall() {
         setCargando(false);
       })
       .catch(err => {
-        console.error("❌ Error cargando el muro:", err);
+        console.error("Error cargando el muro:", err);
         setCargando(false);
       });
   };
@@ -52,7 +52,7 @@ export default function SocialWall() {
       <NuevoSocialPost onPostCreated={cargarPosts} />
 
       <div className="flex items-center justify-between mb-8">
-        <h3 className="font-black text-2xl text-gray-800 tracking-tighter">📢 Novedades</h3>
+        <h3 className="font-black text-2xl text-gray-800 tracking-tighter">Novedades</h3>
         <span className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold uppercase">En vivo</span>
       </div>
       
@@ -60,7 +60,6 @@ export default function SocialWall() {
       <div className="space-y-6">
         {posts.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
-            <span className="text-4xl">🏜️</span>
             <p className="text-gray-400 mt-2 text-sm">Parece que nadie ha publicado nada todavía.</p>
           </div>
         ) : (
@@ -99,8 +98,8 @@ export default function SocialWall() {
 
               {/* Pie del Post: Interacción básica */}
               <div className="mt-4 pt-4 border-t border-gray-50 flex gap-4 text-gray-400">
-                <button className="text-[11px] font-bold hover:text-blue-600 transition-colors">👍 Me gusta</button>
-                <button className="text-[11px] font-bold hover:text-blue-600 transition-colors">💬 Comentar</button>
+                <button className="text-[11px] font-bold hover:text-blue-600 transition-colors">Me gusta</button>
+                <button className="text-[11px] font-bold hover:text-blue-600 transition-colors">Comentar</button>
               </div>
             </div>
           )})

@@ -18,12 +18,12 @@ export default function UserProfile() {
         <div className="relative px-8 pb-8">
           {/* Foto de perfil (Avatar) SUPERPUESTA */}
           <div className="absolute -top-12 left-8 w-24 h-24 bg-slate-800 rounded-2xl border-4 border-white flex items-center justify-center text-4xl shadow-lg">
-            {/* El flex, items-center y justify-center centran el emoji */}
-            👨‍💻
+            {/* El flex, items-center y justify-center centran el icono */}
+            U
           </div>
 
           <div className="mt-16 space-y-2"> {/* space-y-2 para dar aire entre líneas */}
-            {/* 👇 AQUÍ ESTÁ TU NOMBRE, ASEGÚRATE DE QUE SE VEA 👇 */}
+            {/* Nombre visible del usuario */}
             <h2 className="text-3xl font-black text-gray-950 tracking-tighter">Alfonso</h2>
             
             <p className="text-blue-600 font-semibold text-sm">Frontend Developer • IT Department</p>

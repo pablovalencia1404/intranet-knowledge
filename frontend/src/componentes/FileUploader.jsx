@@ -30,15 +30,15 @@ export default function FileUploader({ onUploadSuccess }) {
       const data = await response.json();
 
       if (response.ok && data.status === 'success') {
-        setMensaje("✅ ¡Archivo subido con éxito!");
+        setMensaje("Archivo subido con exito.");
         setFile(null);
         if (onUploadSuccess) onUploadSuccess(); // Para que la lista de abajo se actualice sola
       } else {
-        setMensaje("❌ Error al subir el archivo.");
+        setMensaje("Error al subir el archivo.");
       }
     } catch (error) {
       console.error("Error en la subida:", error);
-      setMensaje("❌ Error de conexión con el servidor.");
+      setMensaje("Error de conexion con el servidor.");
     } finally {
       setSubiendo(false);
     }
@@ -64,7 +64,7 @@ export default function FileUploader({ onUploadSuccess }) {
             disabled={subiendo}
             className="bg-blue-900 text-white px-8 py-2 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50"
           >
-            {subiendo ? "Subiendo..." : "Confirmar Subida ⬆️"}
+            {subiendo ? "Subiendo..." : "Confirmar Subida"}
           </button>
         )}
         

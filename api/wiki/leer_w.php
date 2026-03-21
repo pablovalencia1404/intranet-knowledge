@@ -8,7 +8,7 @@ $coleccion = $db->Wiki;
 $fallback = [
     [
         "id" => 1,
-        "title" => "🚀 Manual de Onboarding",
+        "title" => "Manual de Onboarding",
         "pages" => [
             [
                 "id" => "onb-1",
@@ -29,7 +29,7 @@ $fallback = [
     ],
     [
         "id" => 2,
-        "title" => "⚖️ Politica de Empresa",
+        "title" => "Politica de Empresa",
         "pages" => [
             [
                 "id" => "pol-1",

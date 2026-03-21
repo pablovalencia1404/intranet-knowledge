@@ -50,7 +50,7 @@ export default function NuevoPost({ alEnviar }) {
           <option value="Anuncios">Anuncios</option>
         </select>
         <button type="submit" disabled={enviando} className="bg-orange-600 text-white px-4 py-1 rounded-lg font-bold text-xs">
-          {enviando ? "..." : "Publicar 🚀"}
+          {enviando ? "..." : "Publicar"}
         </button>
       </div>
     </form>

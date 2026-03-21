@@ -59,7 +59,7 @@ export default function NuevoSocialPost({ onPostCreated }) {
         
         <div className="flex justify-between items-center border-t border-gray-50 pt-4">
           <label className="flex items-center gap-2 text-xs font-bold text-gray-500 cursor-pointer hover:text-blue-600">
-            <span>🖼️ Añadir foto</span>
+            <span>Añadir foto</span>
             <input 
               type="file" 
               className="hidden" 
@@ -73,10 +73,10 @@ export default function NuevoSocialPost({ onPostCreated }) {
             disabled={enviando}
             className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold text-xs hover:bg-blue-700"
           >
-            {enviando ? "Cargando..." : "Publicar 🚀"}
+            {enviando ? "Cargando..." : "Publicar"}
           </button>
         </div>
-        {image && <p className="text-[10px] text-green-600 font-bold">📸 Foto: {image.name}</p>}
+        {image && <p className="text-[10px] text-green-600 font-bold">Foto: {image.name}</p>}
       </form>
     </div>
   );

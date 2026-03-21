@@ -6,7 +6,7 @@ export default function Wiki() {
   const fallback = useMemo(() => ([
     {
       id: 1,
-      title: "🚀 Manual de Onboarding",
+      title: "Manual de Onboarding",
       pages: [
         { id: "onb-1", title: "Bienvenida", body: "Bienvenido a Intranet Knowledge." },
         { id: "onb-2", title: "Instalación VPN", body: "Guía de conexión a la red interna." },
@@ -80,7 +80,7 @@ export default function Wiki() {
       
       {/* Cabecera profesional */}
       <div className="p-3 bg-slate-900 text-white flex items-center justify-between text-xs font-bold px-5">
-        <span>📚 WIKI CORPORATIVA - Centro de Conocimiento (BookStack UI Mock)</span>
+        <span>WIKI CORPORATIVA - Centro de Conocimiento (BookStack UI Mock)</span>
       </div>
       
       {/* Contenedor principal de dos columnas */}
@@ -116,7 +116,7 @@ export default function Wiki() {
           {error && <p className="text-xs text-amber-700 mt-2">{error}</p>}
           
           <div className="mt-8 space-y-4">
-            <h4 className="font-bold text-gray-800">📋 Índice del manual</h4>
+            <h4 className="font-bold text-gray-800">Indice del manual</h4>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {activeBook.pages.map((page) => (
                 <button
@@ -129,7 +129,7 @@ export default function Wiki() {
                       : 'bg-white border-gray-100 hover:border-blue-100'
                   }`}
                 >
-                  <span className="text-xl">📄</span>
+                  <span className="text-xl">DOC</span>
                   <p className="text-sm font-medium text-gray-800">{page.title}</p>
                 </button>
               ))}

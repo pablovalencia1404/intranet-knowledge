@@ -41,7 +41,7 @@ export default function Navbar({ usuario, onLogout }) {
           </div>
           <div className="relative group">
             <Link to="/perfil" className="w-8 h-8 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-xs hover:bg-slate-600 transition-colors">
-              👤
+              U
             </Link>
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
               <Link 

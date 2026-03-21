@@ -29,9 +29,9 @@ export default function StatsGrid() {
   }, []);
 
   const items = [
-    { label: "Documentos", value: stats.docs, icon: "📁", color: "text-blue-600" },
-    { label: "Debates", value: stats.foro, icon: "💬", color: "text-orange-600" },
-    { label: "Miembros", value: stats.usuarios, icon: "👥", color: "text-green-600" },
+    { label: "Documentos", value: stats.docs, icon: "DOC", color: "text-blue-600" },
+    { label: "Debates", value: stats.foro, icon: "FORO", color: "text-orange-600" },
+    { label: "Miembros", value: stats.usuarios, icon: "USR", color: "text-green-600" },
   ];
 
   return (
