@@ -93,7 +93,7 @@ function App() {
               <RutaProtegida usuario={usuario} element={<DocumentManager />} />
             } />
             <Route path="/perfil" element={
-              <RutaProtegida usuario={usuario} element={<UserProfile />} />
+            <RutaProtegida usuario={usuario} element={<UserProfile usuario={usuario} />} />
             } />
             <Route path="/wiki" element={
               <RutaProtegida usuario={usuario} element={<Wiki />} />
