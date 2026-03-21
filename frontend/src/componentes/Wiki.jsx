@@ -1,61 +1,79 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 export default function Wiki() {
-  // Simulamos los datos que nos daría el Backend de Chen
-  const [wikiContent] = useState({
-    biblioteca: [
-      {
-        id: 1,
-        title: "🚀 Manual de Onboarding",
-        pages: [
-          {
-            id: "onb-1",
-            title: "Bienvenida",
-            body: "Bienvenido a Intranet Knowledge. Esta guía te ayudará en tu primera semana para configurar accesos, entorno de trabajo y herramientas internas."
-          },
-          {
-            id: "onb-2",
-            title: "Instalación VPN",
-            body: "Descarga el cliente oficial desde el portal IT, usa tus credenciales corporativas y valida la conexión con el recurso interno de prueba."
-          },
-          {
-            id: "onb-3",
-            title: "Herramientas IT",
-            body: "Solicita acceso a correo, repositorio, gestor de tareas y panel de incidencias. Revisa también el protocolo de soporte y escalado."
-          }
-        ]
-      },
-      {
-        id: 2,
-        title: "⚖️ Política de Empresa",
-        pages: [
-          {
-            id: "pol-1",
-            title: "Código de Conducta",
-            body: "Se espera un comportamiento profesional, respeto entre equipos y cumplimiento del reglamento interno en canales online y presenciales."
-          },
-          {
-            id: "pol-2",
-            title: "Seguridad de Datos",
-            body: "No compartas credenciales, usa MFA cuando aplique y reporta cualquier incidente al equipo de seguridad en menos de 24 horas."
-          },
-          {
-            id: "pol-3",
-            title: "Vacaciones",
-            body: "Las vacaciones deben solicitarse con antelación en el portal de RRHH y ser aprobadas por el responsable de área antes de su disfrute."
-          }
-        ]
-      }
-    ]
-  });
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
 
-  const [activeBook, setActiveBook] = useState(wikiContent.biblioteca[0]);
-  const [activePage, setActivePage] = useState(wikiContent.biblioteca[0].pages[0]);
+  const fallback = useMemo(() => ([
+    {
+      id: 1,
+      title: "🚀 Manual de Onboarding",
+      pages: [
+        { id: "onb-1", title: "Bienvenida", body: "Bienvenido a Intranet Knowledge." },
+        { id: "onb-2", title: "Instalación VPN", body: "Guía de conexión a la red interna." },
+        { id: "onb-3", title: "Herramientas IT", body: "Lista de utilidades para el equipo." }
+      ]
+    }
+  ]), []);
+
+  const [biblioteca, setBiblioteca] = useState(fallback);
+  const [activeBook, setActiveBook] = useState(fallback[0]);
+  const [activePage, setActivePage] = useState(fallback[0].pages[0]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const cargarWiki = async () => {
+      try {
+        const res = await fetch(`${API_URL}/wiki/leer_w.php`, {
+          credentials: 'include',
+        });
+        const data = await res.json();
+
+        const libros = Array.isArray(data?.biblioteca) && data.biblioteca.length > 0
+          ? data.biblioteca
+          : fallback;
+
+        const normalizados = libros.map((libro, indexLibro) => ({
+          id: libro.id || libro._id?.$oid || `book-${indexLibro}`,
+          title: libro.title || libro.titulo || `Libro ${indexLibro + 1}`,
+          pages: Array.isArray(libro.pages)
+            ? libro.pages.map((pagina, indexPagina) => ({
+                id: pagina.id || `page-${indexLibro}-${indexPagina}`,
+                title: pagina.title || pagina.titulo || `Página ${indexPagina + 1}`,
+                body: pagina.body || pagina.contenido || 'Contenido no disponible.',
+              }))
+            : [],
+        })).filter((libro) => libro.pages.length > 0);
+
+        const listaFinal = normalizados.length > 0 ? normalizados : fallback;
+        setBiblioteca(listaFinal);
+        setActiveBook(listaFinal[0]);
+        setActivePage(listaFinal[0].pages[0]);
+      } catch (err) {
+        setError('No se pudo cargar la wiki desde el servidor.');
+        setBiblioteca(fallback);
+        setActiveBook(fallback[0]);
+        setActivePage(fallback[0].pages[0]);
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarWiki();
+  }, [API_URL, fallback]);
 
   const handleBookChange = (libro) => {
     setActiveBook(libro);
     setActivePage(libro.pages[0]);
   };
+
+  if (cargando) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 my-6 min-h-[70vh] flex items-center justify-center">
+        <p className="text-sm text-gray-500">Cargando wiki...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 my-6 min-h-[70vh] lg:h-[85vh] animate-in fade-in duration-500 overflow-hidden">
@@ -72,7 +90,7 @@ export default function Wiki() {
         <aside className="w-full md:w-1/3 bg-gray-50/50 border-r border-gray-100 p-6 space-y-8 overflow-y-auto">
           <h4 className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Biblioteca</h4>
           <div className="space-y-4">
-            {wikiContent.biblioteca.map(libro => (
+            {biblioteca.map(libro => (
               <div 
                 key={libro.id} 
                 onClick={() => handleBookChange(libro)}
@@ -95,6 +113,7 @@ export default function Wiki() {
         <main className="w-full md:w-2/3 p-8 overflow-y-auto">
           <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider">Libro Activo</span>
           <h2 className="text-3xl font-black text-gray-900 mt-2 tracking-tighter">{activeBook.title}</h2>
+          {error && <p className="text-xs text-amber-700 mt-2">{error}</p>}
           
           <div className="mt-8 space-y-4">
             <h4 className="font-bold text-gray-800">📋 Índice del manual</h4>
