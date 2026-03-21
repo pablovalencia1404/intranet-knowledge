@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import NuevoSocialPost from './NuevoSocialPost'; // 👈 Asegúrate de que el nombre coincida
 
 export default function SocialWall() {
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [posts, setPosts] = useState([]);
   const [cargando, setCargando] = useState(true);
 
@@ -9,10 +10,19 @@ export default function SocialWall() {
   const cargarPosts = () => {
     
     
-    fetch(`${import.meta.env.VITE_API_URL}/social`)
+    fetch(`${API_URL}/posts/leer_p.php`, {
+      credentials: 'include',
+    })
       .then(res => res.json())
-        .then(data => {
-        setPosts(data.foro || []); // <--- Importante: data.foro
+      .then(data => {
+        const lista = Array.isArray(data)
+          ? data
+          : Array.isArray(data.foro)
+            ? data.foro
+            : Array.isArray(data.datos)
+              ? data.datos
+              : [];
+        setPosts(lista);
         setCargando(false);
       })
       .catch(err => {
@@ -54,22 +64,26 @@ export default function SocialWall() {
             <p className="text-gray-400 mt-2 text-sm">Parece que nadie ha publicado nada todavía.</p>
           </div>
         ) : (
-          posts.map(post => (
-            <div key={post.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group">
+          posts.map((post, index) => {
+            const postId = post?._id?.$oid || post?.id || `post-${index}`;
+            const autor = post?.user || post?.usuario || post?.usuario_id || 'Usuario';
+            const contenido = post?.content || post?.contenido || post?.text || '';
+            return (
+            <div key={postId} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group">
               {/* Cabecera del Post: Usuario y Fecha */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-700 rounded-full flex items-center justify-center text-white font-bold shadow-sm group-hover:scale-110 transition-transform">
-                  {post.user ? post.user[0].toUpperCase() : '?'}
+                  {autor ? autor[0].toUpperCase() : '?'}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-gray-900">{post.user}</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{post.date || 'Reciente'}</p>
+                  <p className="text-sm font-bold text-gray-900">{autor}</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{post.date || post.fecha || 'Reciente'}</p>
                 </div>
               </div>
               
               {/* Cuerpo del Post: Texto */}
               <p className="text-gray-700 leading-relaxed text-sm mb-4">
-                {post.content}
+                {contenido}
               </p>
               
               {/* Imagen del Post (si existe) */}
@@ -89,7 +103,7 @@ export default function SocialWall() {
                 <button className="text-[11px] font-bold hover:text-blue-600 transition-colors">💬 Comentar</button>
               </div>
             </div>
-          ))
+          )})
         )}
       </div>
     </div>

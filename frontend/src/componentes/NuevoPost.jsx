@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 export default function NuevoPost({ alEnviar }) {
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [texto, setTexto] = useState("");
   const [categoria, setCategoria] = useState("Sugerencias");
   const [enviando, setEnviando] = useState(false);
@@ -8,13 +9,18 @@ export default function NuevoPost({ alEnviar }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setEnviando(true);
+    const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
 
     try {
-      const url = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${url}/foro`, {
+      const response = await fetch(`${API_URL}/posts/crear_p.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: "Alfonso", text: texto, cat: categoria, replies: 0 }),
+        body: JSON.stringify({
+          contenido: texto,
+          usuario_id: usuario?.id || 'anonimo',
+          titulo_hilo: categoria,
+        }),
+        credentials: 'include',
       });
 
       if (response.ok) {

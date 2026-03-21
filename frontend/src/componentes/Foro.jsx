@@ -2,12 +2,33 @@ import React, { useState, useEffect } from 'react';
 import NuevoPost from './NuevoPost';
 
 export default function Foro() {
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [debates, setDebates] = useState([]);
 
   const cargarDebates = () => {
-    fetch(`${import.meta.env.VITE_API_URL}/foro`)
+    fetch(`${API_URL}/posts/leer_p.php`, {
+      credentials: 'include',
+    })
       .then(res => res.json())
-      .then(data => setDebates(data));
+      .then(data => {
+        const lista = Array.isArray(data)
+          ? data
+          : Array.isArray(data.foro)
+            ? data.foro
+            : Array.isArray(data.datos)
+              ? data.datos
+              : [];
+
+        const normalizados = lista.map((item, index) => ({
+          id: item?._id?.$oid || item?.id || `debate-${index}`,
+          text: item?.titulo_hilo || item?.contenido || item?.content || 'Sin contenido',
+          user: item?.user || item?.usuario || item?.usuario_id || 'Usuario',
+          cat: item?.categoria || 'General',
+          replies: item?.replies || 0,
+        }));
+
+        setDebates(normalizados);
+      });
   };
 
   useEffect(() => { cargarDebates(); }, []);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 export default function NuevoSocialPost({ onPostCreated }) {
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   // Ahora usamos "texto" y "setTexto" siempre
   const [texto, setTexto] = useState("");
   const [image, setImage] = useState(null);
@@ -10,18 +11,26 @@ export default function NuevoSocialPost({ onPostCreated }) {
     e.preventDefault();
     setEnviando(true);
 
-    const formData = new FormData();
-    formData.append('user', 'Alfonso'); 
-    formData.append('content', texto); // Mandamos "texto" al servidor
-    if (image) formData.append('image', image);
+    const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+    const payload = {
+      contenido: texto,
+      usuario_id: usuario?.id || 'anonimo',
+      titulo_hilo: 'Muro social',
+    };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/social/crear_p.php`, {
+      const response = await fetch(`${API_URL}/posts/crear_p.php`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        credentials: 'include',
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (response.ok && data.status === 'success') {
         setTexto(""); // Borra el texto después de publicar
         setImage(null);
         if (onPostCreated) onPostCreated(); 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 export default function FileUploader({ onUploadSuccess }) {
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [file, setFile] = useState(null);
   const [subiendo, setSubiendo] = useState(false);
   const [mensaje, setMensaje] = useState("");
@@ -11,18 +12,24 @@ export default function FileUploader({ onUploadSuccess }) {
 
     setSubiendo(true);
     setMensaje("");
+    const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
 
     const formData = new FormData();
-    formData.append('archivo', file); // 'archivo' es la clave que debe leer Raúl
-    formData.append('usuario', 'Alfonso'); // Por si quiere saber quién lo sube
+    formData.append('archivo', file);
+    formData.append('titulo', file.name);
+    formData.append('usuario_id', usuario?.id || 'anonimo');
+    formData.append('categoria', 'general');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/documentos/crear_d.php`, {
+      const response = await fetch(`${API_URL}/documentos/crear_d.php`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (response.ok && data.status === 'success') {
         setMensaje("✅ ¡Archivo subido con éxito!");
         setFile(null);
         if (onUploadSuccess) onUploadSuccess(); // Para que la lista de abajo se actualice sola

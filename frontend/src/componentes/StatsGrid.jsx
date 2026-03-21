@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from 'react';
 
 export default function StatsGrid() {
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [stats, setStats] = useState({ docs: 0, foro: 0, usuarios: 0 });
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/stats`)
-      .then(res => res.json())
-      .then(data => setStats(data))
+    const extraerLista = (data) => {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data.datos)) return data.datos;
+      if (Array.isArray(data.data)) return data.data;
+      if (Array.isArray(data.foro)) return data.foro;
+      return [];
+    };
+
+    Promise.all([
+      fetch(`${API_URL}/documentos/leer_d.php`, { credentials: 'include' }).then(r => r.json()),
+      fetch(`${API_URL}/posts/leer_p.php`, { credentials: 'include' }).then(r => r.json()),
+      fetch(`${API_URL}/usuarios/leer_u.php`, { credentials: 'include' }).then(r => r.json()),
+    ])
+      .then(([docs, foro, usuarios]) => {
+        setStats({
+          docs: extraerLista(docs).length,
+          foro: extraerLista(foro).length,
+          usuarios: extraerLista(usuarios).length,
+        });
+      })
       .catch(err => console.error("Error en stats", err));
   }, []);
 

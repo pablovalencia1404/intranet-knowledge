@@ -5,19 +5,37 @@ header("Content-Type: application/json");
 $db = conectarDB();
 $coleccion = $db->Comentarios;
 
-$datos = json_decode(file_get_contents("php://input"), true);
+$contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+$datos = [];
 
-if (!isset($datos['contenido']) || !isset($datos['usuario_id'])) {
+if (stripos($contentType, 'application/json') !== false) {
+    $datos = json_decode(file_get_contents("php://input"), true) ?? [];
+} else {
+    $datos = $_POST;
+}
+
+$contenido = trim($datos['contenido'] ?? $datos['content'] ?? '');
+$usuarioId = trim($datos['usuario_id'] ?? $datos['user'] ?? $datos['usuario'] ?? '');
+$tituloHilo = trim($datos['titulo_hilo'] ?? $datos['categoria'] ?? 'General');
+
+if ($contenido === '' || $usuarioId === '') {
     echo json_encode(["status" => "error", "msj" => "El comentario no puede estar vacío"]);
     exit;
 }
 
 $post = [
-    "usuario_id" => $datos['usuario_id'],
-    "contenido" => $datos['contenido'],
-    "titulo_hilo" => $datos['titulo_hilo'] ?? 'Sin título',
-    "fecha" => new MongoDB\BSON\UTCDateTime()
+    "usuario_id" => $usuarioId,
+    "user" => $usuarioId,
+    "contenido" => $contenido,
+    "content" => $contenido,
+    "titulo_hilo" => $tituloHilo,
+    "categoria" => $tituloHilo,
+    "fecha" => gmdate('c')
 ];
 
 $resultado = $coleccion->insertOne($post);
-echo json_encode(["status" => "success", "msj" => "Post publicado"]);
+echo json_encode([
+    "status" => "success",
+    "msj" => "Post publicado",
+    "id" => (string)$resultado->getInsertedId()
+]);

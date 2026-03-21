@@ -46,15 +46,18 @@ export default function DocumentManager() {
         <p className="text-sm text-gray-500">No hay documentos disponibles.</p>
       ) : (
         <div className="space-y-2">
-          {docs.map((doc, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer group">
+          {docs.map((doc, index) => {
+            const docId = doc?._id?.$oid || doc?.id || `doc-${index}`;
+            const nombre = doc?.titulo || doc?.nombre || doc?.name || 'Archivo sin nombre';
+            return (
+            <div key={docId} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer group">
               <div className="flex items-center gap-3">
                 <span className="text-xl">📄</span>
-                <p className="text-sm font-bold text-gray-700">{doc.nombre || doc.name || "Archivo sin nombre"}</p>
+                <p className="text-sm font-bold text-gray-700">{nombre}</p>
               </div>
               <span className="text-[10px] font-black text-blue-600 opacity-0 group-hover:opacity-100 uppercase tracking-widest transition-opacity">Descargar ↓</span>
             </div>
-          ))}
+          )})}
         </div>
       )}
     </div>
