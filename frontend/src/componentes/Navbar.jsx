@@ -1,5 +1,25 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+
+function itemTimestamp(item) {
+  const fecha = item?.fecha || item?.createdAt || item?.updatedAt || item?.date || '';
+  if (fecha) {
+    const t = new Date(fecha).getTime();
+    if (!Number.isNaN(t) && t > 0) {
+      return t;
+    }
+  }
+
+  const oid = item?._id?.$oid || item?.id || '';
+  if (typeof oid === 'string' && oid.length >= 8) {
+    const seconds = parseInt(oid.slice(0, 8), 16);
+    if (!Number.isNaN(seconds)) {
+      return seconds * 1000;
+    }
+  }
+
+  return 0;
+}
 
 export default function Navbar({ usuario, onLogout }) {
   const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
@@ -7,6 +27,11 @@ export default function Navbar({ usuario, onLogout }) {
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState([]);
   const [buscando, setBuscando] = useState(false);
+  const [notificaciones, setNotificaciones] = useState([]);
+  const [mostrarNotificaciones, setMostrarNotificaciones] = useState(false);
+  const [noLeidas, setNoLeidas] = useState(0);
+  const contenedorNotificacionesRef = useRef(null);
+  const storageKey = `intranet-last-seen-notifications-${usuario?.id || 'anon'}`;
 
   const mostrarResultados = useMemo(() => busqueda.trim().length >= 2, [busqueda]);
 
@@ -19,9 +44,83 @@ export default function Navbar({ usuario, onLogout }) {
     }
   };
 
-  if (!usuario) {
-    return null;
-  }
+  useEffect(() => {
+    const onOutsideClick = (event) => {
+      if (contenedorNotificacionesRef.current && !contenedorNotificacionesRef.current.contains(event.target)) {
+        setMostrarNotificaciones(false);
+      }
+    };
+
+    document.addEventListener('mousedown', onOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', onOutsideClick);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    const cargarNotificaciones = async () => {
+      try {
+        const [docsRes, postsRes] = await Promise.all([
+          fetch(`${API_URL}/documentos/leer_d.php`, { credentials: 'include' }).then((r) => r.json()),
+          fetch(`${API_URL}/posts/leer_p.php`, { credentials: 'include' }).then((r) => r.json()),
+        ]);
+
+        if (cancelado) {
+          return;
+        }
+
+        const docs = Array.isArray(docsRes?.datos) ? docsRes.datos : [];
+        const posts = Array.isArray(postsRes?.foro) ? postsRes.foro : [];
+
+        const docsNotif = docs.slice(0, 12).map((d, index) => ({
+          id: `doc-${d?._id?.$oid || d?.id || index}`,
+          tipo: 'documento',
+          titulo: d?.titulo || d?.nombre || 'Documento nuevo',
+          texto: 'Se ha actualizado la biblioteca documental.',
+          to: '/documentos',
+          ts: itemTimestamp(d),
+        }));
+
+        const postsNotif = posts
+          .filter((p) => !p?.tema_padre_id && String(p?.categoria || p?.titulo_hilo || '').toLowerCase() !== 'muro social')
+          .slice(0, 12)
+          .map((p, index) => ({
+            id: `post-${p?._id?.$oid || p?.id || index}`,
+            tipo: 'foro',
+            titulo: p?.titulo_hilo || p?.contenido || 'Nuevo tema en el foro',
+            texto: 'Hay actividad reciente en foros.',
+            to: '/foro',
+            ts: itemTimestamp(p),
+          }));
+
+        const combinadas = [...postsNotif, ...docsNotif]
+          .sort((a, b) => (b.ts || 0) - (a.ts || 0))
+          .slice(0, 10);
+
+        const lastSeenRaw = localStorage.getItem(storageKey);
+        const lastSeen = lastSeenRaw ? Number(lastSeenRaw) : 0;
+        const noLeidasCalculadas = combinadas.filter((n) => Number(n.ts || 0) > lastSeen).length;
+
+        setNotificaciones(combinadas);
+        setNoLeidas(noLeidasCalculadas);
+      } catch {
+        if (!cancelado) {
+          setNotificaciones([]);
+          setNoLeidas(0);
+        }
+      }
+    };
+
+    cargarNotificaciones();
+    const idInterval = setInterval(cargarNotificaciones, 45000);
+
+    return () => {
+      cancelado = true;
+      clearInterval(idInterval);
+    };
+  }, [API_URL, storageKey]);
 
   const buscarGlobal = async (texto) => {
     const q = texto.trim().toLowerCase();
@@ -97,7 +196,19 @@ export default function Navbar({ usuario, onLogout }) {
     { to: '/foro', label: 'Foro' },
     { to: '/documentos', label: 'Documentos' },
     { to: '/social', label: 'Red Social' },
+    ...(usuario?.rol === 'admin' ? [{ to: '/admin', label: 'Analitica' }] : []),
   ];
+
+  const abrirNotificaciones = () => {
+    const ahora = Date.now();
+    localStorage.setItem(storageKey, String(ahora));
+    setNoLeidas(0);
+    setMostrarNotificaciones((prev) => !prev);
+  };
+
+  if (!usuario) {
+    return null;
+  }
 
   return (
     <nav className="sticky top-0 z-50 bg-[#0f172a] text-white shadow-[0_8px_30px_rgba(15,23,42,0.35)] border-b border-slate-800/80">
@@ -167,6 +278,53 @@ export default function Navbar({ usuario, onLogout }) {
               )}
             </div>
           )}
+
+          <div className="relative" ref={contenedorNotificacionesRef}>
+            <button
+              type="button"
+              onClick={abrirNotificaciones}
+              className="relative h-10 w-10 rounded-xl border border-white/15 bg-white/10 text-white hover:bg-white/20 transition-colors"
+              title="Notificaciones"
+            >
+              N
+              {noLeidas > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {noLeidas > 9 ? '9+' : noLeidas}
+                </span>
+              )}
+            </button>
+
+            {mostrarNotificaciones && (
+              <div className="absolute right-0 top-12 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100">
+                  <p className="text-sm font-bold text-slate-900">Notificaciones</p>
+                  <p className="text-xs text-slate-500">Actividad reciente de la intranet</p>
+                </div>
+
+                <div className="max-h-80 overflow-y-auto">
+                  {notificaciones.length === 0 ? (
+                    <p className="px-4 py-4 text-sm text-slate-500">No hay notificaciones nuevas.</p>
+                  ) : (
+                    notificaciones.map((item) => (
+                      <button
+                        type="button"
+                        key={item.id}
+                        onClick={() => {
+                          setMostrarNotificaciones(false);
+                          navigate(item.to);
+                        }}
+                        className="w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50"
+                      >
+                        <p className="text-[10px] uppercase tracking-[0.12em] text-blue-700 font-bold">{item.tipo}</p>
+                        <p className="text-sm text-slate-800 font-semibold line-clamp-1">{item.titulo}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{item.texto}</p>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="hidden sm:block text-sm text-slate-300 font-medium">
             {usuario.nombre || 'Usuario'}

@@ -7,6 +7,7 @@ import DocumentManager from './componentes/DocumentManager';
 import UserProfile from './componentes/UserProfile';
 import Wiki from './componentes/Wiki';
 import Foro from './componentes/Foro';
+import AdminAnalytics from './componentes/AdminAnalytics';
 import ChatbotWidget from './componentes/ChatbotWidget';
 import Login from './componentes/Login';
 import Registrarse from './componentes/Registrarse';
@@ -208,6 +209,9 @@ function App() {
             } />
             <Route path="/foro" element={
               <RutaProtegida usuario={usuario} element={<Foro />} />
+            } />
+            <Route path="/admin" element={
+              <RutaProtegida usuario={usuario} element={<AdminAnalytics usuario={usuario} />} />
             } />
             <Route path="/chatbot" element={<Navigate to="/social" replace />} />
           </Routes>
