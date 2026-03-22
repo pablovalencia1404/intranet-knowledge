@@ -2,6 +2,51 @@
 require_once __DIR__ . '/../../config_bbdd.php';
 header("Content-Type: application/json");
 
+function limpiarTextoPlano(string $texto): string {
+    $texto = str_replace(["\r\n", "\r"], "\n", $texto);
+    $texto = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', ' ', $texto);
+    $texto = preg_replace('/\s+/u', ' ', $texto);
+    return trim($texto);
+}
+
+function extraerTextoDocumento(string $archivoPath, string $archivoNombre): string {
+    $ext = strtolower(pathinfo($archivoNombre, PATHINFO_EXTENSION));
+
+    if (in_array($ext, ['txt', 'md', 'csv', 'json', 'log', 'xml', 'html', 'htm'], true)) {
+        $raw = @file_get_contents($archivoPath);
+        if (!is_string($raw) || $raw === '') {
+            return '';
+        }
+        if (in_array($ext, ['html', 'htm', 'xml'], true)) {
+            $raw = strip_tags($raw);
+        }
+        return limpiarTextoPlano($raw);
+    }
+
+    if ($ext === 'docx' && class_exists('ZipArchive')) {
+        $zip = new ZipArchive();
+        if ($zip->open($archivoPath) === true) {
+            $xml = $zip->getFromName('word/document.xml');
+            $zip->close();
+            if (is_string($xml) && $xml !== '') {
+                $xml = str_replace('</w:p>', "\n", $xml);
+                $xml = strip_tags($xml);
+                return limpiarTextoPlano($xml);
+            }
+        }
+    }
+
+    if ($ext === 'pdf' && function_exists('shell_exec')) {
+        $cmd = 'pdftotext -q ' . escapeshellarg($archivoPath) . ' - 2>/dev/null';
+        $txt = @shell_exec($cmd);
+        if (is_string($txt) && trim($txt) !== '') {
+            return limpiarTextoPlano($txt);
+        }
+    }
+
+    return '';
+}
+
 try {
     $db = conectarDB();
     $coleccion = $db->Documentos;
@@ -76,6 +121,11 @@ try {
         "subido_por" => $usuarioNombre,
         "fecha_subida" => gmdate('c')
     ];
+
+    $contenidoTexto = extraerTextoDocumento($archivoPath, $archivoNombre);
+    $doc["nombre_archivo"] = $archivoNombre;
+    $doc["contenido_texto"] = $contenidoTexto;
+    $doc["contenido_resumen"] = $contenidoTexto !== '' ? substr($contenidoTexto, 0, 1200) : '';
 
     $resultado = $coleccion->insertOne($doc);
     echo json_encode([

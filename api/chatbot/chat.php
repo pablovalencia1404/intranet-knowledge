@@ -69,6 +69,21 @@ function truncarTexto(string $texto, int $maxLen = 150): string {
     return substr($clean, 0, $maxLen - 3) . '...';
 }
 
+function esSaludoSimple(string $texto): bool {
+    $normalizado = trim(strtolower($texto));
+    $normalizado = preg_replace('/[^a-z0-9\s]/', '', $normalizado);
+    $saludos = [
+        'hola', 'holi', 'buenas', 'buenos dias', 'buen dia', 'buenas tardes', 'buenas noches',
+        'hello', 'hi', 'hey'
+    ];
+
+    if (in_array($normalizado, $saludos, true)) {
+        return true;
+    }
+
+    return strlen($normalizado) <= 20 && preg_match('/^(hola|hi|hello|buenas)/', $normalizado) === 1;
+}
+
 function construirRespuestaContingencia(string $pregunta, array $sources): string {
     if (empty($sources)) {
         return "Estoy tardando mas de lo normal y no pude consultar el motor IA a tiempo. "
@@ -182,15 +197,20 @@ function construirContextoInterno($db, string $pregunta, string $rol): array {
         $titulo = $arr['titulo'] ?? $arr['nombre'] ?? 'Documento sin titulo';
         $categoria = $arr['categoria'] ?? 'sin categoria';
         $subidoPor = $arr['subido_por'] ?? $arr['user'] ?? 'usuario';
-        $texto = $titulo . ' ' . $categoria . ' ' . $subidoPor;
+        $contenidoTexto = (string)($arr['contenido_texto'] ?? $arr['contenido_resumen'] ?? '');
+        $contenidoBreve = truncarTexto($contenidoTexto, 220);
+        $texto = $titulo . ' ' . $categoria . ' ' . $subidoPor . ' ' . $contenidoTexto;
         $score = puntuarContenido($texto, $keywords);
         $docItems[] = [
             'score' => $score,
-            'line' => '- [Documento] ' . $titulo . ' | categoria: ' . $categoria . ' | subido por: ' . $subidoPor,
+            'line' => '- [Documento] ' . $titulo . ' | categoria: ' . $categoria . ' | subido por: ' . $subidoPor
+                . ($contenidoBreve !== '' ? ' | extracto: ' . $contenidoBreve : ''),
             'source' => [
                 'tipo' => 'documento',
                 'titulo' => $titulo,
-                'resumen' => 'Categoria: ' . $categoria . ' | Subido por: ' . $subidoPor
+                'resumen' => ($contenidoBreve !== ''
+                    ? $contenidoBreve
+                    : 'Categoria: ' . $categoria . ' | Subido por: ' . $subidoPor)
             ]
         ];
     }
@@ -238,6 +258,18 @@ if ($message === '') {
     echo json_encode([
         'ok' => false,
         'error' => 'Falta el mensaje'
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if (esSaludoSimple($message)) {
+    echo json_encode([
+        'ok' => true,
+        'error' => null,
+        'text' => "Hola, soy tu asistente de la intranet. Puedo ayudarte con wiki, foro y documentos. "
+            . "Por ejemplo: 'resumeme el documento de onboarding', 'que politica hay sobre vacaciones?' o 'que se comento en el foro sobre VPN?'.",
+        'sources' => [],
+        'engine' => 'local-greeting'
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
