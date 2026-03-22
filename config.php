@@ -18,7 +18,7 @@ if (!defined('OLLAMA_BASE_URL')) {
 }
 
 if (!defined('OLLAMA_MODEL')) {
-	define('OLLAMA_MODEL', getenv('OLLAMA_MODEL') ?: 'qwen2.5:0.5b');
+	define('OLLAMA_MODEL', getenv('OLLAMA_MODEL') ?: 'llama3.2:1b');
 }
 
 if (!defined('LLM_TIMEOUT_SECONDS')) {
@@ -26,11 +26,11 @@ if (!defined('LLM_TIMEOUT_SECONDS')) {
 }
 
 if (!defined('ANYTHINGLLM_TIMEOUT_SECONDS')) {
-	define('ANYTHINGLLM_TIMEOUT_SECONDS', (int)(getenv('ANYTHINGLLM_TIMEOUT_SECONDS') ?: 8));
+	define('ANYTHINGLLM_TIMEOUT_SECONDS', (int)(getenv('ANYTHINGLLM_TIMEOUT_SECONDS') ?: 15));
 }
 
 if (!defined('OLLAMA_TIMEOUT_SECONDS')) {
-	define('OLLAMA_TIMEOUT_SECONDS', (int)(getenv('OLLAMA_TIMEOUT_SECONDS') ?: 20));
+	define('OLLAMA_TIMEOUT_SECONDS', (int)(getenv('OLLAMA_TIMEOUT_SECONDS') ?: 10));
 }
 
 if (!defined('CHATBOT_CONTEXT_MAX_CHARS')) {

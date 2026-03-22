@@ -242,7 +242,8 @@ if ($contextoInterno !== '') {
 }
 
 $timeoutGlobal = LLM_TIMEOUT_SECONDS > 0 ? LLM_TIMEOUT_SECONDS : 20;
-$timeoutAnything = ANYTHINGLLM_TIMEOUT_SECONDS > 0 ? ANYTHINGLLM_TIMEOUT_SECONDS : min(8, $timeoutGlobal);
+$timeoutAnything = ANYTHINGLLM_TIMEOUT_SECONDS > 0 ? ANYTHINGLLM_TIMEOUT_SECONDS : 15;
+$timeoutAnything = max(12, min($timeoutAnything, 30));
 $timeoutOllama = OLLAMA_TIMEOUT_SECONDS > 0 ? OLLAMA_TIMEOUT_SECONDS : $timeoutGlobal;
 
 // 1) Intento principal: AnythingLLM
@@ -286,49 +287,60 @@ if ($ok) {
     exit;
 }
 
-// 2) Fallback rapido: Ollama directo (modelo liviano)
+// 2) Fallback rapido: Ollama directo con reintento de modelo conocido
 $ollamaUrl = rtrim(OLLAMA_BASE_URL, '/') . '/api/generate';
-$ollamaPayload = json_encode([
-    'model' => OLLAMA_MODEL,
-    'prompt' => $mensajeFinal,
-    'stream' => false,
-    'options' => [
-        'temperature' => 0.1,
-        'num_ctx' => OLLAMA_NUM_CTX > 0 ? OLLAMA_NUM_CTX : 1024,
-        'num_predict' => OLLAMA_NUM_PREDICT > 0 ? OLLAMA_NUM_PREDICT : 180
-    ]
-], JSON_UNESCAPED_UNICODE);
+$modelos = array_values(array_unique([
+    OLLAMA_MODEL,
+    'llama3.2:1b',
+    'phi3:mini'
+]));
 
-$ch2 = curl_init($ollamaUrl);
-curl_setopt_array($ch2, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST => true,
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-    CURLOPT_POSTFIELDS => $ollamaPayload,
-    CURLOPT_TIMEOUT => $timeoutOllama
-]);
+$curlError2 = null;
+$response2 = null;
+$data2 = null;
+$httpCode2 = 0;
+$modeloUsado = null;
 
-$response2 = curl_exec($ch2);
-$httpCode2 = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
-$curlError2 = curl_error($ch2);
-curl_close($ch2);
-
-if ($curlError2) {
-    http_response_code(500);
-    echo json_encode([
-        'ok' => false,
-        'error' => 'Timeout o error de LLM. AnythingLLM: ' . ($curlError ?: 'sin detalle') . ' | Ollama: ' . $curlError2,
-        'sources' => $sources
+foreach ($modelos as $modeloIntento) {
+    $ollamaPayload = json_encode([
+        'model' => $modeloIntento,
+        'prompt' => $mensajeFinal,
+        'stream' => false,
+        'options' => [
+            'temperature' => 0.1,
+            'num_ctx' => OLLAMA_NUM_CTX > 0 ? OLLAMA_NUM_CTX : 1024,
+            'num_predict' => OLLAMA_NUM_PREDICT > 0 ? OLLAMA_NUM_PREDICT : 180
+        ]
     ], JSON_UNESCAPED_UNICODE);
-    exit;
+
+    $ch2 = curl_init($ollamaUrl);
+    curl_setopt_array($ch2, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_POSTFIELDS => $ollamaPayload,
+        CURLOPT_TIMEOUT => $timeoutOllama
+    ]);
+
+    $response2 = curl_exec($ch2);
+    $httpCode2 = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+    $curlError2 = curl_error($ch2);
+    curl_close($ch2);
+
+    if (!$curlError2) {
+        $data2 = json_decode((string)$response2, true);
+        if (is_array($data2) && $httpCode2 >= 200 && $httpCode2 < 300 && !empty($data2['response'])) {
+            $modeloUsado = $modeloIntento;
+            break;
+        }
+    }
 }
 
-$data2 = json_decode((string)$response2, true);
-if (!is_array($data2) || $httpCode2 < 200 || $httpCode2 >= 300) {
+if (!is_array($data2) || empty($data2['response']) || $httpCode2 < 200 || $httpCode2 >= 300) {
     http_response_code(500);
     echo json_encode([
         'ok' => false,
-        'error' => 'No se pudo responder ni por AnythingLLM ni por Ollama',
+        'error' => 'Timeout o error de LLM. AnythingLLM: ' . ($curlError ?: 'sin detalle') . ' | Ollama: ' . ($curlError2 ?: 'sin detalle'),
         'sources' => $sources,
         'raw_anythingllm' => is_array($data) ? $data : $response,
         'raw_ollama' => $response2
@@ -336,11 +348,11 @@ if (!is_array($data2) || $httpCode2 < 200 || $httpCode2 >= 300) {
     exit;
 }
 
-$text2 = $data2['response'] ?? 'No se recibió texto del modelo.';
+$text2 = $data2['response'];
 echo json_encode([
     'ok' => true,
     'error' => null,
     'text' => $text2,
     'sources' => $sources,
-    'engine' => 'ollama'
+    'engine' => 'ollama' . ($modeloUsado ? ':' . $modeloUsado : '')
 ], JSON_UNESCAPED_UNICODE);
