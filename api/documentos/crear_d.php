@@ -34,7 +34,7 @@ if (isset($_FILES['archivo']) && isset($_FILES['archivo']['name']) && $_FILES['a
     $archivoPath = $uploadDir . $archivoNombre;
     
     if (move_uploaded_file($archivoTMP, $archivoPath)) {
-        $archivoUrl = '/uploads/' . $archivoNombre;
+        $archivoUrl = '/api/documentos/descargar_d.php?archivo=' . urlencode($archivoNombre);
     } else {
         echo json_encode(["status" => "error", "msj" => "Error al guardar el archivo"]);
         exit;
