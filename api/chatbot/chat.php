@@ -42,7 +42,8 @@ if ($message === '') {
 $url = ANYTHINGLLM_BASE_URL . '/api/v1/workspace/' . ANYTHINGLLM_WORKSPACE_SLUG . '/chat';
 
 $payload = json_encode([
-    'message' => $message
+    'message' => $message,
+    'mode' => 'chat'
 ], JSON_UNESCAPED_UNICODE);
 
 $ch = curl_init($url);
@@ -96,9 +97,22 @@ $text =
     $data['text'] ??
     'No se recibió texto del asistente.';
 
+$ok = $httpCode >= 200 && $httpCode < 300;
+$error = null;
+
+if (!$ok) {
+    $error =
+        $data['error'] ??
+        $data['message'] ??
+        $data['msg'] ??
+        $data['detail'] ??
+        'Error devuelto por AnythingLLM';
+}
+
 http_response_code($httpCode ?: 200);
 echo json_encode([
-    'ok' => $httpCode >= 200 && $httpCode < 300,
+    'ok' => $ok,
+    'error' => $error,
     'text' => $text,
     'raw' => $data
 ], JSON_UNESCAPED_UNICODE);
