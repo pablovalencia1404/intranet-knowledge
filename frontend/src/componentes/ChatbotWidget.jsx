@@ -295,6 +295,14 @@ export default function ChatbotWidget({ usuario }) {
                     <textarea
                       value={entrada}
                       onChange={(e) => setEntrada(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          if (!cargando && entrada.trim()) {
+                            enviarTexto(entrada);
+                          }
+                        }
+                      }}
                       placeholder="Escribe tu pregunta aqui..."
                       className="flex-1 min-h-[48px] max-h-32 resize-y border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
