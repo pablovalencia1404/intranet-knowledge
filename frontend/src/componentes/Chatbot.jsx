@@ -12,6 +12,7 @@ export default function Chatbot({ usuario }) {
   const [entrada, setEntrada] = useState('');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
+  const [feedbackEnviado, setFeedbackEnviado] = useState({});
   const endRef = useRef(null);
 
   useEffect(() => {
@@ -52,6 +53,8 @@ export default function Chatbot({ usuario }) {
         id: `b-${Date.now()}`,
         rol: 'bot',
         texto: data.text || 'No se recibió respuesta del asistente.',
+        pregunta: texto,
+        fuentes: Array.isArray(data.sources) ? data.sources : [],
       };
       setMensajes((prev) => [...prev, botMsg]);
     } catch (err) {
@@ -60,10 +63,42 @@ export default function Chatbot({ usuario }) {
         id: `be-${Date.now()}`,
         rol: 'bot',
         texto: 'No pude responder en este momento. Revisa configuración del backend de chatbot.',
+        pregunta: texto,
+        fuentes: [],
       };
       setMensajes((prev) => [...prev, botErr]);
     } finally {
       setCargando(false);
+    }
+  };
+
+  const enviarFeedback = async (msg, util) => {
+    if (feedbackEnviado[msg.id]) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/chatbot/feedback.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          util,
+          pregunta: msg.pregunta || '',
+          respuesta: msg.texto || '',
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+
+      setFeedbackEnviado((prev) => ({ ...prev, [msg.id]: true }));
+    } catch (err) {
+      setError(`No se pudo guardar feedback: ${err.message}`);
     }
   };
 
@@ -81,15 +116,53 @@ export default function Chatbot({ usuario }) {
 
       <div className="flex-1 overflow-y-auto p-5 bg-gradient-to-b from-slate-50 to-white space-y-4">
         {mensajes.map((msg) => (
-          <div
-            key={msg.id}
-            className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-              msg.rol === 'user'
-                ? 'ml-auto bg-blue-600 text-white rounded-br-sm'
-                : 'mr-auto bg-slate-100 text-slate-800 rounded-bl-sm'
-            }`}
-          >
-            {msg.texto}
+          <div key={msg.id} className={`max-w-[88%] ${msg.rol === 'user' ? 'ml-auto' : 'mr-auto'}`}>
+            <div
+              className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                msg.rol === 'user'
+                  ? 'bg-blue-600 text-white rounded-br-sm'
+                  : 'bg-slate-100 text-slate-800 rounded-bl-sm'
+              }`}
+            >
+              {msg.texto}
+            </div>
+
+            {msg.rol === 'bot' && Array.isArray(msg.fuentes) && msg.fuentes.length > 0 && (
+              <div className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Fuentes</p>
+                <ul className="mt-1 space-y-1">
+                  {msg.fuentes.slice(0, 4).map((f, idx) => (
+                    <li key={`${msg.id}-f-${idx}`} className="text-xs text-slate-700">
+                      {f.tipo}: {f.titulo}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {msg.rol === 'bot' && msg.pregunta && (
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => enviarFeedback(msg, true)}
+                  disabled={Boolean(feedbackEnviado[msg.id])}
+                  className="text-xs px-2 py-1 rounded border border-emerald-200 text-emerald-700 bg-emerald-50 disabled:opacity-60"
+                >
+                  Util
+                </button>
+                <button
+                  type="button"
+                  onClick={() => enviarFeedback(msg, false)}
+                  disabled={Boolean(feedbackEnviado[msg.id])}
+                  className="text-xs px-2 py-1 rounded border border-rose-200 text-rose-700 bg-rose-50 disabled:opacity-60"
+                >
+                  No util
+                </button>
+                {feedbackEnviado[msg.id] && (
+                  <span className="text-[11px] text-slate-500">Gracias por el feedback</span>
+                )}
+              </div>
+            )}
           </div>
         ))}
 
