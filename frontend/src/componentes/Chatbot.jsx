@@ -55,6 +55,7 @@ export default function Chatbot({ usuario }) {
         texto: data.text || 'No se recibió respuesta del asistente.',
         pregunta: texto,
         fuentes: Array.isArray(data.sources) ? data.sources : [],
+        engine: data.engine || 'desconocido',
       };
       setMensajes((prev) => [...prev, botMsg]);
     } catch (err) {
@@ -142,6 +143,7 @@ export default function Chatbot({ usuario }) {
 
             {msg.rol === 'bot' && msg.pregunta && (
               <div className="mt-2 flex items-center gap-2">
+                <span className="text-[11px] text-slate-500">Motor: {msg.engine || 'N/A'}</span>
                 <button
                   type="button"
                   onClick={() => enviarFeedback(msg, true)}

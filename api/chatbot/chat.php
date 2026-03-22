@@ -75,7 +75,7 @@ function construirContextoInterno($db, string $pregunta, string $rol): array {
     $sources = [];
 
     // Wiki
-    $wikiDocs = $db->Wiki->find([], ['limit' => 5])->toArray();
+    $wikiDocs = $db->Wiki->find([], ['limit' => 3])->toArray();
     $wikiItems = [];
 
     foreach ($wikiDocs as $doc) {
@@ -121,7 +121,7 @@ function construirContextoInterno($db, string $pregunta, string $rol): array {
     }
 
     // Foro
-    $foroDocs = $db->Comentarios->find([], ['limit' => 120])->toArray();
+    $foroDocs = $db->Comentarios->find([], ['limit' => 40])->toArray();
     $foroItems = [];
     foreach ($foroDocs as $post) {
         $arr = json_decode(json_encode($post), true);
@@ -151,7 +151,7 @@ function construirContextoInterno($db, string $pregunta, string $rol): array {
     }
 
     // Documentos
-    $docDocs = $db->Documentos->find([], ['limit' => 120])->toArray();
+    $docDocs = $db->Documentos->find([], ['limit' => 40])->toArray();
     $docItems = [];
     foreach ($docDocs as $doc) {
         $arr = json_decode(json_encode($doc), true);
@@ -189,8 +189,8 @@ function construirContextoInterno($db, string $pregunta, string $rol): array {
 
     $contexto = implode("\n", $lineas);
     // Limita tamaño para no saturar tokens
-    if (strlen($contexto) > 5000) {
-        $contexto = substr($contexto, 0, 5000);
+    if (strlen($contexto) > 2500) {
+        $contexto = substr($contexto, 0, 2500);
     }
 
     return [
@@ -231,7 +231,7 @@ $sources = $contextData['sources'];
 $mensajeFinal = $message;
 if ($contextoInterno !== '') {
     $mensajeFinal = "Eres el asistente de la intranet. Usa el CONTEXTO INTERNO para responder con precision. "
-        . "Si no hay datos suficientes, indicalo claramente. Responde en espanol."
+        . "Si no hay datos suficientes, indicalo claramente en una respuesta breve. Responde en espanol."
         . " Al final incluye 'Fuentes consultadas' con 2-4 referencias breves tomadas del contexto.\n\n"
         . "CONTEXTO INTERNO:\n"
         . $contextoInterno
@@ -239,17 +239,16 @@ if ($contextoInterno !== '') {
         . $message;
 }
 
+$timeout = LLM_TIMEOUT_SECONDS > 0 ? LLM_TIMEOUT_SECONDS : 20;
+
+// 1) Intento principal: AnythingLLM
 $payload = json_encode([
     'message' => $mensajeFinal,
     'mode' => 'chat'
 ], JSON_UNESCAPED_UNICODE);
 
 $ch = curl_init($url);
-
-$headers = [
-    'Content-Type: application/json'
-];
-
+$headers = ['Content-Type: application/json'];
 if (ANYTHINGLLM_API_KEY !== '') {
     $headers[] = 'Authorization: Bearer ' . ANYTHINGLLM_API_KEY;
 }
@@ -259,59 +258,85 @@ curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_HTTPHEADER => $headers,
     CURLOPT_POSTFIELDS => $payload,
-    CURLOPT_TIMEOUT => 60
+    CURLOPT_TIMEOUT => $timeout
 ]);
 
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $curlError = curl_error($ch);
-
 curl_close($ch);
 
-if ($curlError) {
-    http_response_code(500);
+$data = is_string($response) ? json_decode($response, true) : null;
+$ok = (!$curlError) && is_array($data) && $httpCode >= 200 && $httpCode < 300;
+
+if ($ok) {
+    $text = $data['textResponse'] ?? $data['response'] ?? $data['text'] ?? 'No se recibió texto del asistente.';
     echo json_encode([
-        'ok' => false,
-        'error' => 'Error cURL: ' . $curlError
+        'ok' => true,
+        'error' => null,
+        'text' => $text,
+        'sources' => $sources,
+        'engine' => 'anythingllm',
+        'raw' => $data
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$data = json_decode($response, true);
+// 2) Fallback rapido: Ollama directo (modelo liviano)
+$ollamaUrl = rtrim(OLLAMA_BASE_URL, '/') . '/api/generate';
+$ollamaPayload = json_encode([
+    'model' => OLLAMA_MODEL,
+    'prompt' => $mensajeFinal,
+    'stream' => false,
+    'options' => [
+        'temperature' => 0.2,
+        'num_ctx' => 2048,
+        'num_predict' => 300
+    ]
+], JSON_UNESCAPED_UNICODE);
 
-if (!is_array($data)) {
+$ch2 = curl_init($ollamaUrl);
+curl_setopt_array($ch2, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+    CURLOPT_POSTFIELDS => $ollamaPayload,
+    CURLOPT_TIMEOUT => $timeout
+]);
+
+$response2 = curl_exec($ch2);
+$httpCode2 = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+$curlError2 = curl_error($ch2);
+curl_close($ch2);
+
+if ($curlError2) {
     http_response_code(500);
     echo json_encode([
         'ok' => false,
-        'error' => 'La respuesta de AnythingLLM no es JSON válido',
-        'raw' => $response
+        'error' => 'Timeout o error de LLM. AnythingLLM: ' . ($curlError ?: 'sin detalle') . ' | Ollama: ' . $curlError2,
+        'sources' => $sources
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$text =
-    $data['textResponse'] ??
-    $data['response'] ??
-    $data['text'] ??
-    'No se recibió texto del asistente.';
-
-$ok = $httpCode >= 200 && $httpCode < 300;
-$error = null;
-
-if (!$ok) {
-    $error =
-        $data['error'] ??
-        $data['message'] ??
-        $data['msg'] ??
-        $data['detail'] ??
-        'Error devuelto por AnythingLLM';
+$data2 = json_decode((string)$response2, true);
+if (!is_array($data2) || $httpCode2 < 200 || $httpCode2 >= 300) {
+    http_response_code(500);
+    echo json_encode([
+        'ok' => false,
+        'error' => 'No se pudo responder ni por AnythingLLM ni por Ollama',
+        'sources' => $sources,
+        'raw_anythingllm' => is_array($data) ? $data : $response,
+        'raw_ollama' => $response2
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
-http_response_code($httpCode ?: 200);
+$text2 = $data2['response'] ?? 'No se recibió texto del modelo.';
 echo json_encode([
-    'ok' => $ok,
-    'error' => $error,
-    'text' => $text,
+    'ok' => true,
+    'error' => null,
+    'text' => $text2,
     'sources' => $sources,
-    'raw' => $data
+    'engine' => 'ollama'
 ], JSON_UNESCAPED_UNICODE);
