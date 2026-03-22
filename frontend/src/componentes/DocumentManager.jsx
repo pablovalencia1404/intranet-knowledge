@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import FileUploader from './FileUploader';
 
 export default function DocumentManager() {
@@ -6,6 +7,7 @@ export default function DocumentManager() {
   const [docs, setDocs] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const uploaderRef = useRef(null);
 
   const cargarDocs = () => {
     setError('');
@@ -42,14 +44,32 @@ export default function DocumentManager() {
         <h3 className="mt-1 text-xl font-extrabold text-slate-900">Biblioteca Institucional</h3>
         <p className="mt-2 text-sm text-slate-500">Gestiona archivos y documentación del equipo.</p>
 
-        <button className="mt-5 w-full rounded-xl bg-blue-600 text-white font-bold text-sm py-2.5 hover:bg-blue-700 transition-colors">
+        <button
+          type="button"
+          onClick={() => uploaderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="mt-5 w-full rounded-xl bg-blue-600 text-white font-bold text-sm py-2.5 hover:bg-blue-700 transition-colors"
+        >
           + Nuevo documento
         </button>
 
         <div className="mt-6 space-y-2">
-          <div className="rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold px-3 py-2">Mis documentos</div>
-          <div className="rounded-lg text-slate-600 text-sm px-3 py-2">Historial</div>
-          <div className="rounded-lg text-slate-600 text-sm px-3 py-2">Canales de foro</div>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="w-full text-left rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold px-3 py-2"
+          >
+            Mis documentos
+          </button>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+            className="w-full text-left rounded-lg text-slate-600 text-sm px-3 py-2 hover:bg-slate-100"
+          >
+            Historial
+          </button>
+          <Link to="/foro" className="block rounded-lg text-slate-600 text-sm px-3 py-2 hover:bg-slate-100">
+            Canales de foro
+          </Link>
         </div>
       </aside>
 
@@ -60,7 +80,7 @@ export default function DocumentManager() {
           Accede y gestiona toda la documentación técnica, manuales y recursos compartidos.
         </p>
 
-        <div className="mt-6">
+        <div ref={uploaderRef} className="mt-6">
           <FileUploader onUploadSuccess={cargarDocs} />
         </div>
 

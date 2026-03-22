@@ -1,45 +1,90 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import NuevoPost from './NuevoPost';
 import TemaDetalle from './TemaDetalle';
 
 const TAGS = ['#Innovacion', '#Cultura', '#Eventos', '#Seguridad', '#Productividad', '#UXDesign'];
+
+function fechaLegible(fechaIso) {
+  if (!fechaIso) {
+    return 'Sin fecha';
+  }
+  const date = new Date(fechaIso);
+  if (Number.isNaN(date.getTime())) {
+    return 'Sin fecha';
+  }
+  return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
 
 export default function Foro() {
   const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [debates, setDebates] = useState([]);
   const [temaSeleccionado, setTemaSeleccionado] = useState(null);
   const [mostrarNuevoTema, setMostrarNuevoTema] = useState(false);
+  const [filtro, setFiltro] = useState('recientes');
+  const [tagActiva, setTagActiva] = useState('');
 
-  const cargarDebates = () => {
-    fetch(`${API_URL}/posts/leer_p.php`, {
-      credentials: 'include',
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const lista = Array.isArray(data)
-          ? data
-          : Array.isArray(data.foro)
-            ? data.foro
-            : Array.isArray(data.datos)
-              ? data.datos
-              : [];
-
-        const normalizados = lista
-          .filter((item) => !item.tema_padre_id)
-          .map((item, index) => ({
-            id: item?._id?.$oid || item?.id || `debate-${index}`,
-            text: item?.titulo_hilo || item?.contenido || item?.content || 'Sin contenido',
-            excerpt: (item?.contenido || item?.content || 'Sin descripción disponible.').slice(0, 170),
-            user: item?.user || item?.usuario || item?.usuario_id || 'Usuario',
-            cat: item?.categoria || 'General',
-            replies: Number(item?.replies || item?.respuestas || 0),
-          }));
-
-        setDebates(normalizados);
-      })
-      .catch(() => {
-        setDebates([]);
+  const cargarDebates = async () => {
+    try {
+      const res = await fetch(`${API_URL}/posts/leer_p.php`, {
+        credentials: 'include',
       });
+      const data = await res.json();
+
+      const lista = Array.isArray(data?.foro) ? data.foro : [];
+      const temas = lista.filter((item) => !item.tema_padre_id && String(item?.categoria || item?.titulo_hilo || '').toLowerCase() !== 'muro social');
+      const respuestas = lista.filter((item) => Boolean(item?.tema_padre_id));
+
+      const countsRes = await Promise.all(
+        temas.map(async (tema) => {
+          const id = tema?._id?.$oid || tema?.id || '';
+          if (!id) {
+            return { id: '', likes: 0, comentarios: 0 };
+          }
+          try {
+            const r = await fetch(`${API_URL}/posts/leer_lc.php?post_id=${id}`, { credentials: 'include' });
+            const json = await r.json();
+            return {
+              id,
+              likes: Number(json?.total_likes || 0),
+              comentarios: Number(json?.total_comentarios || 0),
+            };
+          } catch {
+            return { id, likes: 0, comentarios: 0 };
+          }
+        })
+      );
+
+      const countsMap = countsRes.reduce((acc, item) => {
+        if (item.id) {
+          acc[item.id] = item;
+        }
+        return acc;
+      }, {});
+
+      const normalizados = temas.map((item, index) => {
+        const id = item?._id?.$oid || item?.id || `debate-${index}`;
+        const replies = respuestas.filter((r) => String(r?.tema_padre_id || '') === String(id)).length;
+        const counts = countsMap[id] || { likes: 0, comentarios: 0 };
+
+        return {
+          id,
+          text: item?.titulo_hilo || item?.contenido || item?.content || 'Sin contenido',
+          excerpt: String(item?.contenido || item?.content || 'Sin descripcion disponible.').slice(0, 170),
+          user: item?.user || item?.usuario || item?.usuario_id || 'Usuario',
+          cat: item?.categoria || item?.titulo_hilo || 'General',
+          fecha: item?.fecha || '',
+          replies,
+          likes: counts.likes,
+          comentarios: counts.comentarios,
+          actividad: replies + counts.comentarios + counts.likes,
+        };
+      });
+
+      setDebates(normalizados);
+    } catch {
+      setDebates([]);
+    }
   };
 
   useEffect(() => {
@@ -47,21 +92,37 @@ export default function Foro() {
   }, []);
 
   const expertos = useMemo(() => {
-    const base = debates.slice(0, 3);
-    if (base.length === 0) {
-      return [
-        { nombre: 'Elena Rivas', rol: 'Arquitecto de Soluciones', puntos: 42 },
-        { nombre: 'Marcos S.', rol: 'Head of Culture', puntos: 38 },
-        { nombre: 'Sofia Mendez', rol: 'Senior UX Lead', puntos: 15 },
-      ];
+    const actividadPorUsuario = debates.reduce((acc, debate) => {
+      const nombre = String(debate.user || 'Usuario');
+      acc[nombre] = (acc[nombre] || 0) + Number(debate.actividad || 0);
+      return acc;
+    }, {});
+
+    return Object.entries(actividadPorUsuario)
+      .map(([nombre, puntos]) => ({ nombre, rol: 'Colaborador', puntos }))
+      .sort((a, b) => b.puntos - a.puntos)
+      .slice(0, 3);
+  }, [debates]);
+
+  const debatesFiltrados = useMemo(() => {
+    let list = [...debates];
+
+    if (tagActiva) {
+      const tag = tagActiva.replace('#', '').toLowerCase();
+      list = list.filter((d) => String(d.cat || '').toLowerCase().includes(tag));
     }
 
-    return base.map((item, index) => ({
-      nombre: item.user,
-      rol: item.cat,
-      puntos: 15 + (index + 1) * 9,
-    }));
-  }, [debates]);
+    if (filtro === 'populares') {
+      list.sort((a, b) => b.actividad - a.actividad);
+    } else if (filtro === 'sin-respuesta') {
+      list = list.filter((d) => d.replies === 0 && d.comentarios === 0);
+      list.sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
+    } else {
+      list.sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
+    }
+
+    return list;
+  }, [debates, filtro, tagActiva]);
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-6 my-6">
@@ -82,21 +143,21 @@ export default function Foro() {
 
         <div className="mt-6 rounded-xl bg-slate-100 border border-slate-200 p-3 flex items-center justify-between">
           <div className="flex items-center gap-5 text-sm font-semibold">
-            <button type="button" className="text-blue-700">Recientes</button>
-            <button type="button" className="text-slate-600">Populares</button>
-            <button type="button" className="text-slate-600">Sin respuesta</button>
+            <button type="button" onClick={() => setFiltro('recientes')} className={filtro === 'recientes' ? 'text-blue-700' : 'text-slate-600'}>Recientes</button>
+            <button type="button" onClick={() => setFiltro('populares')} className={filtro === 'populares' ? 'text-blue-700' : 'text-slate-600'}>Populares</button>
+            <button type="button" onClick={() => setFiltro('sin-respuesta')} className={filtro === 'sin-respuesta' ? 'text-blue-700' : 'text-slate-600'}>Sin respuesta</button>
           </div>
-          <span className="text-slate-400 text-sm">☷</span>
+          <span className="text-slate-400 text-sm">{debatesFiltrados.length} temas</span>
         </div>
 
         <div className="mt-4 space-y-3">
-          {debates.length === 0 && (
+          {debatesFiltrados.length === 0 && (
             <article className="rounded-2xl bg-white border border-slate-200 p-6 text-slate-500">
-              Aun no hay debates. Crea el primer tema para iniciar la conversación.
+              No hay temas para este filtro. Prueba cambiar de vista o crear un nuevo tema.
             </article>
           )}
 
-          {debates.map((debate, index) => (
+          {debatesFiltrados.map((debate) => (
             <button
               key={debate.id}
               type="button"
@@ -109,13 +170,14 @@ export default function Foro() {
                     <span className="inline-flex items-center rounded-md bg-blue-50 text-blue-700 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider">
                       {debate.cat}
                     </span>
-                    <span className="text-xs text-slate-400">hace {2 + index} horas</span>
+                    <span className="text-xs text-slate-400">{fechaLegible(debate.fecha)}</span>
                   </div>
                   <h3 className="text-2xl font-bold text-slate-900 leading-tight">{debate.text}</h3>
                   <p className="mt-2 text-slate-600 text-sm leading-relaxed">{debate.excerpt}...</p>
                   <div className="mt-4 flex items-center gap-6 text-xs text-slate-500 font-semibold">
-                    <span>💬 {debate.replies} comentarios</span>
-                    <span>👁 {120 + index * 220} vistas</span>
+                    <span>💬 {debate.replies} respuestas</span>
+                    <span>🗨 {debate.comentarios} comentarios</span>
+                    <span>❤️ {debate.likes} likes</span>
                   </div>
                 </div>
                 <div className="h-11 w-11 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
@@ -132,9 +194,14 @@ export default function Foro() {
           <h4 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-600">Etiquetas populares</h4>
           <div className="mt-3 flex flex-wrap gap-2">
             {TAGS.map((tag) => (
-              <span key={tag} className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+              <button
+                type="button"
+                key={tag}
+                onClick={() => setTagActiva((prev) => (prev === tag ? '' : tag))}
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold ${tagActiva === tag ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}
+              >
                 {tag}
-              </span>
+              </button>
             ))}
           </div>
         </article>
@@ -142,6 +209,7 @@ export default function Foro() {
         <article className="rounded-2xl bg-white border border-slate-200 p-5">
           <h4 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-600">Expertos activos</h4>
           <div className="mt-4 space-y-3">
+            {expertos.length === 0 && <p className="text-sm text-slate-500">Aun no hay actividad suficiente.</p>}
             {expertos.map((experto, index) => (
               <div key={`${experto.nombre}-${index}`} className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -164,9 +232,9 @@ export default function Foro() {
           <p className="mt-3 text-sm text-blue-100">
             Consulta nuestra wiki centralizada antes de abrir un nuevo hilo.
           </p>
-          <button type="button" className="mt-4 text-sm font-bold text-white hover:text-cyan-200 transition-colors">
+          <Link to="/wiki" className="inline-block mt-4 text-sm font-bold text-white hover:text-cyan-200 transition-colors">
             Ir a la Wiki →
-          </button>
+          </Link>
         </article>
       </aside>
 

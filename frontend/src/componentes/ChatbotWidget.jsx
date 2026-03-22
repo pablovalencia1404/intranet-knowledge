@@ -30,6 +30,12 @@ export default function ChatbotWidget({ usuario }) {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes, cargando]);
 
+  useEffect(() => {
+    const openWidget = () => setEsAbierto(true);
+    window.addEventListener('open-chatbot-widget', openWidget);
+    return () => window.removeEventListener('open-chatbot-widget', openWidget);
+  }, []);
+
   const historial = useMemo(() => {
     const preguntas = mensajes
       .filter((msg) => msg.rol === 'user')

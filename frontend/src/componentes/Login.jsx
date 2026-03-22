@@ -78,9 +78,12 @@ export default function Login({ onLogin }) {
                   <label className="block text-sm text-slate-700 font-medium">
                     Contrasena
                   </label>
-                  <button type="button" className="text-xs text-blue-700 hover:text-blue-900 font-semibold">
+                  <a
+                    href="mailto:soporte@institucion.edu?subject=Recuperacion%20de%20contrasena"
+                    className="text-xs text-blue-700 hover:text-blue-900 font-semibold"
+                  >
                     Olvidaste tu contrasena?
-                  </button>
+                  </a>
                 </div>
                 <input
                   type="password"
@@ -118,9 +121,9 @@ export default function Login({ onLogin }) {
           </div>
 
           <div className="text-center mt-6 text-xs text-slate-500">
-            <button type="button" className="hover:text-slate-700">Espanol (ES)</button>
+            <a href="https://www.espanol.org" target="_blank" rel="noreferrer" className="hover:text-slate-700">Espanol (ES)</a>
             <span className="mx-3">·</span>
-            <button type="button" className="hover:text-slate-700">Soporte Tecnico</button>
+            <a href="mailto:soporte@institucion.edu" className="hover:text-slate-700">Soporte Tecnico</a>
           </div>
         </div>
       </div>
@@ -129,10 +132,10 @@ export default function Login({ onLogin }) {
         <div className="h-full max-w-6xl mx-auto px-4 md:px-6 flex items-center justify-between text-xs text-slate-500">
           <p className="font-semibold text-slate-800">Knowledge Core</p>
           <div className="hidden md:flex items-center gap-5">
-            <span>Privacy Policy</span>
-            <span>Terms of Service</span>
-            <span>Security Protocols</span>
-            <span>Help Desk</span>
+            <a href="/" className="hover:text-slate-700">Privacy Policy</a>
+            <a href="/" className="hover:text-slate-700">Terms of Service</a>
+            <a href="/" className="hover:text-slate-700">Security Protocols</a>
+            <a href="mailto:soporte@institucion.edu" className="hover:text-slate-700">Help Desk</a>
           </div>
           <p>© 2024 Knowledge Core</p>
         </div>

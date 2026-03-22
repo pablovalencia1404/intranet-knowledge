@@ -1,12 +1,84 @@
 // UserProfile.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 export default function UserProfile({ usuario }) {
-  // Estadísticas (podrían venir de la API en el futuro)
+  const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
+  const [statsState, setStats] = useState([
+    { label: 'Posts', value: 0 },
+    { label: 'Documentos', value: 0 },
+    { label: 'Rol', value: usuario?.rol || 'Usuario' },
+  ]);
+  const [bio, setBio] = useState(
+    () => localStorage.getItem(`bio_${usuario?.id || usuario?.email || 'usuario'}`)
+      || 'Bienvenido a tu panel personal. Desde aqui puedes gestionar tu informacion y revisar tu actividad en la intranet.'
+  );
+
+  useEffect(() => {
+    const cargarStats = async () => {
+      try {
+        const [postsRes, docsRes] = await Promise.all([
+          fetch(`${API_URL}/posts/leer_p.php`, { credentials: 'include' }).then((r) => r.json()),
+          fetch(`${API_URL}/documentos/leer_d.php`, { credentials: 'include' }).then((r) => r.json()),
+        ]);
+
+        const posts = Array.isArray(postsRes?.foro) ? postsRes.foro : [];
+        const docs = Array.isArray(docsRes?.datos) ? docsRes.datos : [];
+
+        const nombre = (usuario?.nombre || '').toLowerCase();
+        const userId = String(usuario?.id || '');
+
+        const misPosts = posts.filter((p) => {
+          const pUser = String(p?.usuario_id || '').toLowerCase();
+          const pName = String(p?.usuario || p?.user || '').toLowerCase();
+          return (userId && pUser === userId) || (nombre && pName === nombre);
+        }).length;
+
+        const misDocs = docs.filter((d) => {
+          const dUser = String(d?.subido_por_id || '').toLowerCase();
+          const dName = String(d?.subido_por || '').toLowerCase();
+          return (userId && dUser === userId) || (nombre && dName === nombre);
+        }).length;
+
+        setStats([
+          { label: 'Posts', value: misPosts },
+          { label: 'Documentos', value: misDocs },
+          { label: 'Rol', value: usuario?.rol || 'Usuario' },
+        ]);
+      } catch (e) {
+        setStats([
+          { label: 'Posts', value: 0 },
+          { label: 'Documentos', value: 0 },
+          { label: 'Rol', value: usuario?.rol || 'Usuario' },
+        ]);
+      }
+    };
+
+    cargarStats();
+  }, [API_URL, usuario]);
+
+  const editarPerfil = () => {
+    const nuevoTexto = window.prompt('Actualiza tu descripcion de perfil:', bio);
+    if (typeof nuevoTexto === 'string' && nuevoTexto.trim()) {
+      const limpia = nuevoTexto.trim();
+      setBio(limpia);
+      localStorage.setItem(`bio_${usuario?.id || usuario?.email || 'usuario'}`, limpia);
+    }
+  };
+
+  const compartirPerfil = async () => {
+    const enlace = `${window.location.origin}/perfil`;
+    try {
+      await navigator.clipboard.writeText(enlace);
+      window.alert('Enlace del perfil copiado al portapapeles.');
+    } catch (e) {
+      window.prompt('Copia este enlace del perfil:', enlace);
+    }
+  };
+
   const stats = [
-    { label: "Posts", value: "12" },
-    { label: "Documentos", value: "5" },
-    { label: "Rol", value: usuario?.rol || "Usuario" }
+    { label: 'Posts', value: statsState[0]?.value ?? 0 },
+    { label: 'Documentos', value: statsState[1]?.value ?? 0 },
+    { label: 'Rol', value: statsState[2]?.value ?? (usuario?.rol || 'Usuario') }
   ];
 
   return (
@@ -26,15 +98,23 @@ export default function UserProfile({ usuario }) {
               </h2>
               <p className="mt-2 text-slate-600 font-medium text-sm">{usuario?.email || 'sin-email@intranet.local'}</p>
               <p className="mt-5 text-slate-600 text-sm leading-relaxed max-w-2xl">
-                Bienvenido a tu panel personal. Desde aquí puedes gestionar tu información y revisar tu actividad en la intranet.
+                {bio}
               </p>
             </div>
 
             <div className="flex gap-2">
-              <button className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors">
+              <button
+                type="button"
+                onClick={editarPerfil}
+                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors"
+              >
                 Editar perfil
               </button>
-              <button className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold hover:bg-slate-200 transition-colors border border-slate-200">
+              <button
+                type="button"
+                onClick={compartirPerfil}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold hover:bg-slate-200 transition-colors border border-slate-200"
+              >
                 Compartir
               </button>
             </div>

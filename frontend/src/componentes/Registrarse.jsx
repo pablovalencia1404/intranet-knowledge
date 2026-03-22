@@ -161,9 +161,9 @@ export default function Registrarse() {
           </div>
 
           <div className="text-center mt-6 text-[11px] uppercase tracking-[0.16em] text-slate-400 font-semibold">
-            <button type="button" className="hover:text-slate-600">Politica de Privacidad</button>
+            <a href="/" className="hover:text-slate-600">Politica de Privacidad</a>
             <span className="mx-3"> </span>
-            <button type="button" className="hover:text-slate-600">Terminos de Uso</button>
+            <a href="/" className="hover:text-slate-600">Terminos de Uso</a>
           </div>
         </div>
       </div>
@@ -172,10 +172,10 @@ export default function Registrarse() {
         <div className="h-full max-w-6xl mx-auto px-4 md:px-6 flex items-center justify-between text-xs text-slate-500">
           <p className="font-semibold text-slate-800">Knowledge Core</p>
           <div className="hidden md:flex items-center gap-5">
-            <span>Privacy Policy</span>
-            <span>Terms of Service</span>
-            <span>Security Protocols</span>
-            <span>Help Desk</span>
+            <a href="/" className="hover:text-slate-700">Privacy Policy</a>
+            <a href="/" className="hover:text-slate-700">Terms of Service</a>
+            <a href="/" className="hover:text-slate-700">Security Protocols</a>
+            <a href="mailto:soporte@institucion.edu" className="hover:text-slate-700">Help Desk</a>
           </div>
           <p>© 2024 Knowledge Core</p>
         </div>
