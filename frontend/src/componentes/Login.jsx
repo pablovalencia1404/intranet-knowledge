@@ -48,62 +48,95 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Intranet</h1>
-        <p className="text-gray-600 mb-8">Inicia sesión para acceder</p>
-
-        <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <label className="block text-gray-700 font-semibold mb-2">
-              Correo electrónico
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="tu@email.com"
-            />
+    <div className="min-h-screen bg-[#eef2f7] flex flex-col">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8">
+        <div className="w-full max-w-xl">
+          <div className="text-center mb-8">
+            <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-black text-white text-lg font-bold">✦</div>
+            <h1 className="mt-4 text-5xl font-extrabold tracking-tight text-slate-900">Knowledge Core</h1>
+            <p className="mt-1 text-xs uppercase tracking-[0.24em] text-slate-500 font-semibold">Intranet</p>
           </div>
 
-          <div className="mb-6">
-            <label className="block text-gray-700 font-semibold mb-2">
-              Contraseña
-            </label>
-            <input
-              type="password"
-              value={contraseña}
-              onChange={(e) => setContraseña(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-            />
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 max-w-md mx-auto">
+            <form onSubmit={handleLogin}>
+              <div className="mb-4">
+                <label className="block text-sm text-slate-700 font-medium mb-2">
+                  Correo electronico
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full h-12 px-4 bg-slate-100 border border-slate-200 rounded-md text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="nombre@compania.com"
+                />
+              </div>
+
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm text-slate-700 font-medium">
+                    Contrasena
+                  </label>
+                  <button type="button" className="text-xs text-blue-700 hover:text-blue-900 font-semibold">
+                    Olvidaste tu contrasena?
+                  </button>
+                </div>
+                <input
+                  type="password"
+                  value={contraseña}
+                  onChange={(e) => setContraseña(e.target.value)}
+                  required
+                  className="w-full h-12 px-4 bg-slate-100 border border-slate-200 rounded-md text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={cargando}
+                className="w-full h-12 bg-gradient-to-r from-[#07266f] to-[#2563eb] hover:from-[#061d56] hover:to-[#1f56cf] disabled:opacity-60 text-white font-bold rounded-lg transition"
+              >
+                {cargando ? 'Iniciando sesion...' : 'Iniciar sesion →'}
+              </button>
+            </form>
+
+            <div className="my-6 border-t border-slate-200" />
+
+            <p className="text-center text-slate-600 text-sm">
+              No tienes una cuenta institucional?{' '}
+              <Link to="/registrarse" className="text-blue-700 hover:text-blue-900 font-semibold">
+                Registrate aqui
+              </Link>
+            </p>
           </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={cargando}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg transition duration-200"
-          >
-            {cargando ? 'Iniciando sesión...' : 'Iniciar sesión'}
-          </button>
-        </form>
-
-        <p className="text-center text-gray-600 mt-6 text-sm">
-          ¿No tienes cuenta?{' '}
-          <Link to="/registrarse" className="text-blue-600 hover:underline font-semibold">
-            Regístrate aquí
-          </Link>
-        </p>
+          <div className="text-center mt-6 text-xs text-slate-500">
+            <button type="button" className="hover:text-slate-700">Espanol (ES)</button>
+            <span className="mx-3">·</span>
+            <button type="button" className="hover:text-slate-700">Soporte Tecnico</button>
+          </div>
+        </div>
       </div>
+
+      <footer className="h-14 border-t border-slate-200 bg-white/70 backdrop-blur">
+        <div className="h-full max-w-6xl mx-auto px-4 md:px-6 flex items-center justify-between text-xs text-slate-500">
+          <p className="font-semibold text-slate-800">Knowledge Core</p>
+          <div className="hidden md:flex items-center gap-5">
+            <span>Privacy Policy</span>
+            <span>Terms of Service</span>
+            <span>Security Protocols</span>
+            <span>Help Desk</span>
+          </div>
+          <p>© 2024 Knowledge Core</p>
+        </div>
+      </footer>
     </div>
   );
 }
