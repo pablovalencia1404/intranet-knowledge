@@ -61,7 +61,7 @@ function puntuarContenido(string $texto, array $keywords): int {
     return $score;
 }
 
-function truncarTexto(string $texto, int $maxLen = 220): string {
+function truncarTexto(string $texto, int $maxLen = 150): string {
     $clean = trim(preg_replace('/\s+/', ' ', $texto));
     if (strlen($clean) <= $maxLen) {
         return $clean;
@@ -189,8 +189,9 @@ function construirContextoInterno($db, string $pregunta, string $rol): array {
 
     $contexto = implode("\n", $lineas);
     // Limita tamaño para no saturar tokens
-    if (strlen($contexto) > 2500) {
-        $contexto = substr($contexto, 0, 2500);
+    $maxContext = CHATBOT_CONTEXT_MAX_CHARS > 0 ? CHATBOT_CONTEXT_MAX_CHARS : 1200;
+    if (strlen($contexto) > $maxContext) {
+        $contexto = substr($contexto, 0, $maxContext);
     }
 
     return [
@@ -230,16 +231,19 @@ $sources = $contextData['sources'];
 
 $mensajeFinal = $message;
 if ($contextoInterno !== '') {
-    $mensajeFinal = "Eres el asistente de la intranet. Usa el CONTEXTO INTERNO para responder con precision. "
-        . "Si no hay datos suficientes, indicalo claramente en una respuesta breve. Responde en espanol."
-        . " Al final incluye 'Fuentes consultadas' con 2-4 referencias breves tomadas del contexto.\n\n"
+    $mensajeFinal = "Eres el asistente de la intranet. Responde en espanol, de forma directa y breve. "
+        . "Maximo 6 lineas o 120 palabras. No expliques de mas ni razonamientos internos. "
+        . "Si faltan datos, dilo en una frase. "
+        . "Al final incluye 'Fuentes consultadas' con 2-3 referencias cortas del contexto.\n\n"
         . "CONTEXTO INTERNO:\n"
         . $contextoInterno
         . "\n\nPREGUNTA DEL USUARIO:\n"
         . $message;
 }
 
-$timeout = LLM_TIMEOUT_SECONDS > 0 ? LLM_TIMEOUT_SECONDS : 20;
+$timeoutGlobal = LLM_TIMEOUT_SECONDS > 0 ? LLM_TIMEOUT_SECONDS : 20;
+$timeoutAnything = ANYTHINGLLM_TIMEOUT_SECONDS > 0 ? ANYTHINGLLM_TIMEOUT_SECONDS : min(8, $timeoutGlobal);
+$timeoutOllama = OLLAMA_TIMEOUT_SECONDS > 0 ? OLLAMA_TIMEOUT_SECONDS : $timeoutGlobal;
 
 // 1) Intento principal: AnythingLLM
 $payload = json_encode([
@@ -258,7 +262,7 @@ curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_HTTPHEADER => $headers,
     CURLOPT_POSTFIELDS => $payload,
-    CURLOPT_TIMEOUT => $timeout
+    CURLOPT_TIMEOUT => $timeoutAnything
 ]);
 
 $response = curl_exec($ch);
@@ -289,9 +293,9 @@ $ollamaPayload = json_encode([
     'prompt' => $mensajeFinal,
     'stream' => false,
     'options' => [
-        'temperature' => 0.2,
-        'num_ctx' => 2048,
-        'num_predict' => 300
+        'temperature' => 0.1,
+        'num_ctx' => OLLAMA_NUM_CTX > 0 ? OLLAMA_NUM_CTX : 1024,
+        'num_predict' => OLLAMA_NUM_PREDICT > 0 ? OLLAMA_NUM_PREDICT : 180
     ]
 ], JSON_UNESCAPED_UNICODE);
 
@@ -301,7 +305,7 @@ curl_setopt_array($ch2, [
     CURLOPT_POST => true,
     CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
     CURLOPT_POSTFIELDS => $ollamaPayload,
-    CURLOPT_TIMEOUT => $timeout
+    CURLOPT_TIMEOUT => $timeoutOllama
 ]);
 
 $response2 = curl_exec($ch2);

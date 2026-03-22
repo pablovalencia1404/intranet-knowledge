@@ -24,7 +24,7 @@ services:
     entrypoint: ["/bin/sh", "-lc"]
     command: >
       "sleep 5;
-      ollama pull ${OLLAMA_MODEL:-llama3.2:1b}"
+      ollama pull ${OLLAMA_MODEL:-qwen2.5:0.5b}"
     environment:
       OLLAMA_HOST: http://ollama:11434
     restart: 'no'
@@ -68,8 +68,13 @@ services:
       ANYTHINGLLM_WORKSPACE_SLUG: ${ANYTHINGLLM_WORKSPACE_SLUG:-intranet-knowledge}
       ANYTHINGLLM_API_KEY: ${ANYTHINGLLM_API_KEY:-}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:0.5b}
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-20}
+      ANYTHINGLLM_TIMEOUT_SECONDS: ${ANYTHINGLLM_TIMEOUT_SECONDS:-8}
+      OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-20}
+      CHATBOT_CONTEXT_MAX_CHARS: ${CHATBOT_CONTEXT_MAX_CHARS:-1200}
+      OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-1024}
+      OLLAMA_NUM_PREDICT: ${OLLAMA_NUM_PREDICT:-180}
     depends_on:
       - mongodb
       - anythingllm
