@@ -30,7 +30,7 @@ if (!defined('ANYTHINGLLM_TIMEOUT_SECONDS')) {
 }
 
 if (!defined('OLLAMA_TIMEOUT_SECONDS')) {
-	define('OLLAMA_TIMEOUT_SECONDS', (int)(getenv('OLLAMA_TIMEOUT_SECONDS') ?: 10));
+	define('OLLAMA_TIMEOUT_SECONDS', (int)(getenv('OLLAMA_TIMEOUT_SECONDS') ?: 18));
 }
 
 if (!defined('CHATBOT_CONTEXT_MAX_CHARS')) {

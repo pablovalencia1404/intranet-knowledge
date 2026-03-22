@@ -69,6 +69,27 @@ function truncarTexto(string $texto, int $maxLen = 150): string {
     return substr($clean, 0, $maxLen - 3) . '...';
 }
 
+function construirRespuestaContingencia(string $pregunta, array $sources): string {
+    if (empty($sources)) {
+        return "Estoy tardando mas de lo normal y no pude consultar el motor IA a tiempo. "
+            . "Prueba con una pregunta mas concreta o vuelve a intentar en unos segundos.";
+    }
+
+    $lineas = [];
+    foreach (array_slice($sources, 0, 3) as $src) {
+        $tipo = $src['tipo'] ?? 'fuente';
+        $titulo = $src['titulo'] ?? 'sin titulo';
+        $resumen = truncarTexto((string)($src['resumen'] ?? ''), 110);
+        $lineas[] = "- [" . $tipo . "] " . $titulo . ($resumen !== '' ? ": " . $resumen : '');
+    }
+
+    return "No he podido generar una respuesta completa por latencia del modelo. "
+        . "Te dejo el contexto mas relevante para tu pregunta ('" . truncarTexto($pregunta, 60) . "'):\n"
+        . implode("\n", $lineas)
+        . "\n\nFuentes consultadas: "
+        . implode(', ', array_map(fn($s) => (string)($s['titulo'] ?? 'fuente'), array_slice($sources, 0, 3)));
+}
+
 function construirContextoInterno($db, string $pregunta, string $rol): array {
     $keywords = extraerKeywords($pregunta);
     $lineas = [];
@@ -245,6 +266,7 @@ $timeoutGlobal = LLM_TIMEOUT_SECONDS > 0 ? LLM_TIMEOUT_SECONDS : 20;
 $timeoutAnything = ANYTHINGLLM_TIMEOUT_SECONDS > 0 ? ANYTHINGLLM_TIMEOUT_SECONDS : 15;
 $timeoutAnything = max(12, min($timeoutAnything, 30));
 $timeoutOllama = OLLAMA_TIMEOUT_SECONDS > 0 ? OLLAMA_TIMEOUT_SECONDS : $timeoutGlobal;
+$timeoutOllama = max(8, min($timeoutOllama, 30));
 
 // 1) Intento principal: AnythingLLM
 $payload = json_encode([
@@ -263,6 +285,7 @@ curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_HTTPHEADER => $headers,
     CURLOPT_POSTFIELDS => $payload,
+    CURLOPT_CONNECTTIMEOUT => 3,
     CURLOPT_TIMEOUT => $timeoutAnything
 ]);
 
@@ -302,9 +325,23 @@ $httpCode2 = 0;
 $modeloUsado = null;
 
 foreach ($modelos as $modeloIntento) {
+    $sourcesCortas = array_map(function ($s) {
+        $tipo = $s['tipo'] ?? 'fuente';
+        $titulo = $s['titulo'] ?? 'sin titulo';
+        $resumen = truncarTexto((string)($s['resumen'] ?? ''), 100);
+        return "- [" . $tipo . "] " . $titulo . ($resumen !== '' ? ": " . $resumen : '');
+    }, array_slice($sources, 0, 4));
+
+    $promptOllama = "Responde en espanol de forma breve y directa (maximo 80 palabras). "
+        . "Si faltan datos, dilo en una frase.\n\n"
+        . "CONTEXTO:\n"
+        . (empty($sourcesCortas) ? "- Sin fuentes" : implode("\n", $sourcesCortas))
+        . "\n\nPREGUNTA:\n"
+        . $message;
+
     $ollamaPayload = json_encode([
         'model' => $modeloIntento,
-        'prompt' => $mensajeFinal,
+        'prompt' => $promptOllama,
         'stream' => false,
         'options' => [
             'temperature' => 0.1,
@@ -319,6 +356,7 @@ foreach ($modelos as $modeloIntento) {
         CURLOPT_POST => true,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
         CURLOPT_POSTFIELDS => $ollamaPayload,
+        CURLOPT_CONNECTTIMEOUT => 3,
         CURLOPT_TIMEOUT => $timeoutOllama
     ]);
 
@@ -337,11 +375,13 @@ foreach ($modelos as $modeloIntento) {
 }
 
 if (!is_array($data2) || empty($data2['response']) || $httpCode2 < 200 || $httpCode2 >= 300) {
-    http_response_code(500);
+    $fallbackText = construirRespuestaContingencia($message, $sources);
     echo json_encode([
-        'ok' => false,
-        'error' => 'Timeout o error de LLM. AnythingLLM: ' . ($curlError ?: 'sin detalle') . ' | Ollama: ' . ($curlError2 ?: 'sin detalle'),
+        'ok' => true,
+        'error' => null,
+        'text' => $fallbackText,
         'sources' => $sources,
+        'engine' => 'fallback-context',
         'raw_anythingllm' => is_array($data) ? $data : $response,
         'raw_ollama' => $response2
     ], JSON_UNESCAPED_UNICODE);
