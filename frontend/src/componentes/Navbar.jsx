@@ -27,6 +27,7 @@ export default function Navbar({ usuario, onLogout }) {
         <div className="hidden md:flex items-center gap-8">
           <Link to="/wiki" className="text-sm font-medium text-gray-300 hover:text-white">Wiki</Link>
           <Link to="/foro" className="text-sm font-medium text-gray-300 hover:text-white">Foro</Link>
+          <Link to="/chatbot" className="text-sm font-medium text-gray-300 hover:text-white">Chatbot</Link>
           <Link to="/documentos" className="text-sm font-bold text-blue-400 hover:text-blue-300">Documentos</Link>
           <Link to="/social" className="text-sm font-bold text-blue-400 hover:text-blue-300">Red Social</Link>
         </div>

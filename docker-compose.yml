@@ -26,6 +26,10 @@ services:
     container_name: api_backend
     ports:
       - "8080:80" 
+    environment:
+      ANYTHINGLLM_BASE_URL: ${ANYTHINGLLM_BASE_URL:-}
+      ANYTHINGLLM_WORKSPACE_SLUG: ${ANYTHINGLLM_WORKSPACE_SLUG:-}
+      ANYTHINGLLM_API_KEY: ${ANYTHINGLLM_API_KEY:-}
     depends_on:
       - mongodb
 
