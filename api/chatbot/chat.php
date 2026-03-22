@@ -37,9 +37,9 @@ function extraerKeywords(string $texto): array {
         'donde', 'cuando', 'porque', 'sobre', 'hay', 'ya', 'si', 'no', 'o'
     ];
 
-    $tokens = preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($texto));
+    $tokens = preg_split('/[^\p{L}\p{N}]+/u', strtolower($texto));
     $tokens = array_filter($tokens, function ($token) use ($stopwords) {
-        return mb_strlen($token) >= 3 && !in_array($token, $stopwords, true);
+        return strlen($token) >= 3 && !in_array($token, $stopwords, true);
     });
 
     return array_values(array_unique($tokens));
@@ -50,7 +50,7 @@ function puntuarContenido(string $texto, array $keywords): int {
         return 0;
     }
 
-    $textoLower = mb_strtolower($texto);
+    $textoLower = strtolower($texto);
     $score = 0;
     foreach ($keywords as $kw) {
         if (str_contains($textoLower, $kw)) {
@@ -63,10 +63,10 @@ function puntuarContenido(string $texto, array $keywords): int {
 
 function truncarTexto(string $texto, int $maxLen = 220): string {
     $clean = trim(preg_replace('/\s+/', ' ', $texto));
-    if (mb_strlen($clean) <= $maxLen) {
+    if (strlen($clean) <= $maxLen) {
         return $clean;
     }
-    return mb_substr($clean, 0, $maxLen - 3) . '...';
+    return substr($clean, 0, $maxLen - 3) . '...';
 }
 
 function construirContextoInterno($db, string $pregunta, string $rol): array {
@@ -189,8 +189,8 @@ function construirContextoInterno($db, string $pregunta, string $rol): array {
 
     $contexto = implode("\n", $lineas);
     // Limita tamaño para no saturar tokens
-    if (mb_strlen($contexto) > 5000) {
-        $contexto = mb_substr($contexto, 0, 5000);
+    if (strlen($contexto) > 5000) {
+        $contexto = substr($contexto, 0, 5000);
     }
 
     return [
