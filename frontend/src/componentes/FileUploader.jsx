@@ -46,30 +46,35 @@ export default function FileUploader({ onUploadSuccess }) {
   };
 
   return (
-    <div className="bg-blue-50 p-6 rounded-3xl border-2 border-dashed border-blue-200 mb-8">
+    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 md:p-8 mb-8">
       <form onSubmit={handleUpload} className="flex flex-col items-center gap-4">
-        <div className="text-center">
-          <p className="text-sm font-black text-blue-900 mb-1">Subir nuevo documento</p>
-          <p className="text-[10px] text-blue-600 uppercase tracking-widest">PDF, DOCX, XLSX (MÁX 10MB)</p>
+        <div className="h-12 w-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-xl">
+          ↑
         </div>
 
-        <input 
-          type="file" 
+        <div className="text-center">
+          <p className="text-2xl font-extrabold text-slate-900 mb-1">Subir nuevo documento</p>
+          <p className="text-sm text-slate-500">Arrastra archivos aquí o haz clic para buscarlos</p>
+          <p className="text-[11px] text-slate-400 mt-1">PDF, DOCX, XLSX (MAX 10MB)</p>
+        </div>
+
+        <input
+          type="file"
           onChange={(e) => setFile(e.target.files[0])}
-          className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+          className="text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
         />
 
         {file && (
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={subiendo}
-            className="bg-blue-900 text-white px-8 py-2 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50"
+            className="bg-slate-900 text-white px-7 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all disabled:opacity-50"
           >
-            {subiendo ? "Subiendo..." : "Confirmar Subida"}
+            {subiendo ? 'Subiendo...' : 'Confirmar subida'}
           </button>
         )}
-        
-        {mensaje && <p className="text-[10px] font-bold mt-2">{mensaje}</p>}
+
+        {mensaje && <p className="text-xs font-semibold mt-2 text-slate-700">{mensaje}</p>}
       </form>
     </div>
   );

@@ -35,52 +35,74 @@ export default function DocumentManager() {
     cargarDocs();
   }, []);
 
-  // ... (aquí iría tu tabla de documentos con el .map)
   return (
-    <div className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100">
-      <h2 className="text-xl font-black mb-6">Biblioteca de Archivos</h2>
-      
-      {/* Componente para subir archivos */}
-      <FileUploader onUploadSuccess={cargarDocs} />
-      {cargando ? (
-        <p className="animate-pulse text-gray-400 text-xs">Buscando archivos...</p>
-      ) : error ? (
-        <p className="text-sm text-red-600">{error}</p>
-      ) : docs.length === 0 ? (
-        <p className="text-sm text-gray-500">No hay documentos disponibles.</p>
-      ) : (
-        <div className="space-y-2">
-          {docs.map((doc, index) => {
-            const docId = doc?._id?.$oid || doc?.id || `doc-${index}`;
-            const nombre = doc?.titulo || doc?.nombre || doc?.name || 'Archivo sin nombre';
-            const url = doc?.url || '#';
-            const subidopor = doc?.subido_por || 'Usuario';
-            return (
-            <div key={docId} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors group">
-              <div className="flex items-center gap-3">
-                <span className="text-xl">📄</span>
-                <div>
-                  <p className="text-sm font-bold text-gray-700">{nombre}</p>
-                  <p className="text-xs text-gray-500">Subido por {subidopor}</p>
-                </div>
-              </div>
-              {url !== '#' ? (
-                <a
-                  href={url}
-                  download
-                  className="text-[10px] font-black text-blue-600 opacity-0 group-hover:opacity-100 uppercase tracking-widest transition-opacity hover:text-blue-800"
-                >
-                  Descargar ↓
-                </a>
-              ) : (
-                <span className="text-[10px] font-black text-gray-400 opacity-0 group-hover:opacity-100 uppercase tracking-widest transition-opacity">
-                  Sin archivo
-                </span>
-              )}
-            </div>
-          )})}
+    <div className="grid grid-cols-1 xl:grid-cols-[260px_1fr] gap-4 md:gap-6">
+      <aside className="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 h-fit xl:sticky xl:top-24">
+        <p className="text-xs uppercase tracking-[0.18em] text-blue-600 font-bold">Centro de Conocimiento</p>
+        <h3 className="mt-1 text-xl font-extrabold text-slate-900">Biblioteca Institucional</h3>
+        <p className="mt-2 text-sm text-slate-500">Gestiona archivos y documentación del equipo.</p>
+
+        <button className="mt-5 w-full rounded-xl bg-blue-600 text-white font-bold text-sm py-2.5 hover:bg-blue-700 transition-colors">
+          + Nuevo documento
+        </button>
+
+        <div className="mt-6 space-y-2">
+          <div className="rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold px-3 py-2">Mis documentos</div>
+          <div className="rounded-lg text-slate-600 text-sm px-3 py-2">Historial</div>
+          <div className="rounded-lg text-slate-600 text-sm px-3 py-2">Canales de foro</div>
         </div>
-      )}
+      </aside>
+
+      <section className="bg-white border border-slate-200 rounded-2xl p-4 md:p-6">
+        <p className="text-xs uppercase tracking-[0.18em] text-blue-600 font-bold">Biblioteca Institucional</p>
+        <h2 className="text-3xl font-extrabold text-slate-900 mt-1">Biblioteca de Archivos</h2>
+        <p className="text-slate-500 mt-3 text-sm md:text-base">
+          Accede y gestiona toda la documentación técnica, manuales y recursos compartidos.
+        </p>
+
+        <div className="mt-6">
+          <FileUploader onUploadSuccess={cargarDocs} />
+        </div>
+
+        {cargando ? (
+          <p className="animate-pulse text-slate-500 text-sm">Buscando archivos...</p>
+        ) : error ? (
+          <p className="text-sm text-red-600">{error}</p>
+        ) : docs.length === 0 ? (
+          <p className="text-sm text-slate-500">No hay documentos disponibles.</p>
+        ) : (
+          <div className="space-y-3">
+            {docs.map((doc, index) => {
+              const docId = doc?._id?.$oid || doc?.id || `doc-${index}`;
+              const nombre = doc?.titulo || doc?.nombre || doc?.name || 'Archivo sin nombre';
+              const url = doc?.url || '#';
+              const subidopor = doc?.subido_por || 'Usuario';
+              return (
+                <article key={docId} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-blue-200 hover:bg-blue-50/60 transition-colors group">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xl">📄</span>
+                    <div className="min-w-0">
+                      <p className="text-sm md:text-base font-bold text-slate-800 truncate">{nombre}</p>
+                      <p className="text-xs text-slate-500">Subido por {subidopor}</p>
+                    </div>
+                  </div>
+                  {url !== '#' ? (
+                    <a
+                      href={url}
+                      download
+                      className="text-xs font-bold text-blue-700 rounded-lg border border-blue-200 px-3 py-1.5 bg-white hover:bg-blue-100 transition-colors"
+                    >
+                      Descargar
+                    </a>
+                  ) : (
+                    <span className="text-xs font-bold text-slate-400">Sin archivo</span>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

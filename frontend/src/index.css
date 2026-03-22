@@ -1,1 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
+
+:root {
+	--kc-primary: #2563eb;
+	--kc-secondary: #1e293b;
+	--kc-tertiary: #0ea5e9;
+	--kc-neutral: #f8fafc;
+	--kc-text: #0f172a;
+	--kc-muted: #64748b;
+	--kc-surface: #ffffff;
+	--kc-border: #e2e8f0;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+	color: var(--kc-text);
+	background:
+		radial-gradient(circle at 10% -30%, rgba(37, 99, 235, 0.12), transparent 35%),
+		radial-gradient(circle at 110% 20%, rgba(14, 165, 233, 0.12), transparent 35%),
+		var(--kc-neutral);
+}
+
+#root {
+	min-height: 100vh;
+}
+
+::selection {
+	background: rgba(37, 99, 235, 0.2);
+}

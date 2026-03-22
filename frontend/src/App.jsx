@@ -182,7 +182,7 @@ function App() {
     <Router>
       <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
         {usuario && <Navbar usuario={usuario} onLogout={cerrarSesion} />}
-        <main className={usuario ? "max-w-5xl mx-auto p-6" : ""}>
+        <main className={usuario ? "w-full px-4 md:px-6 py-4" : ""}>
           <Routes>
             <Route path="/login" element={<Login onLogin={setUsuario} />} />
             <Route path="/registrarse" element={<Registrarse />} />

@@ -188,26 +188,25 @@ export default function Wiki() {
   };
   if (cargando) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 my-6 min-h-[70vh] flex items-center justify-center">
-        <p className="text-sm text-gray-500">Cargando wiki...</p>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 my-6 min-h-[70vh] flex items-center justify-center">
+        <p className="text-sm text-slate-500">Cargando wiki...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 my-6 min-h-[70vh] lg:h-[85vh] animate-in fade-in duration-500 overflow-hidden">
-      
-      {/* Cabecera profesional */}
-      <div className="p-3 bg-slate-900 text-white flex items-center justify-between text-xs font-bold px-5">
-        <span>WIKI CORPORATIVA - Centro de Conocimiento (BookStack UI Mock)</span>
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 my-6 min-h-[70vh] lg:h-[85vh] animate-in fade-in duration-500 overflow-hidden">
+      <div className="px-6 py-4 bg-[#0f172a] text-white flex items-center justify-between">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-blue-300 font-bold">Biblioteca</p>
+          <h3 className="text-lg font-extrabold">Centro de conocimiento</h3>
+        </div>
       </div>
       
-      {/* Contenedor principal de dos columnas */}
       <div className="flex flex-col md:flex-row h-full">
-        
-        {/* Columna Izquierda: Libros y Capítulos */}
-        <aside className="w-full md:w-1/3 bg-gray-50/50 border-r border-gray-100 p-6 space-y-8 overflow-y-auto">
-          <h4 className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Biblioteca</h4>
+
+        <aside className="w-full md:w-[36%] bg-slate-50 border-r border-slate-200 p-5 space-y-6 overflow-y-auto">
+          <h4 className="text-[11px] uppercase font-bold text-blue-700 tracking-[0.15em]">Biblioteca institucional</h4>
           <div className="space-y-4">
             {biblioteca.map(libro => (
               <div 
@@ -215,12 +214,12 @@ export default function Wiki() {
                 onClick={() => handleBookChange(libro)}
                 className={`p-4 rounded-xl border transition-all cursor-pointer ${
                   activeBook.id === libro.id 
-                    ? 'bg-blue-600 text-white shadow-md' 
-                    : 'bg-white border-gray-100 hover:border-blue-100 hover:shadow-sm'
+                    ? 'bg-blue-600 text-white shadow-md border-blue-600' 
+                    : 'bg-white border-slate-200 hover:border-blue-200 hover:shadow-sm'
                 }`}
               >
                 <p className="font-bold text-sm truncate">{libro.title}</p>
-                <p className={`text-[10px] mt-1 ${activeBook.id === libro.id ? 'text-blue-100' : 'text-gray-400'}`}>
+                <p className={`text-[10px] mt-1 ${activeBook.id === libro.id ? 'text-blue-100' : 'text-slate-400'}`}>
                   Contiene {libro.pages.length} páginas de documentación.
                 </p>
               </div>
@@ -228,16 +227,15 @@ export default function Wiki() {
           </div>
         </aside>
 
-        {/* Columna Derecha: Contenido del Libro Activo */}
-        <main className="w-full md:w-2/3 p-8 overflow-y-auto">
-          <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider">Libro Activo</span>
-          <h2 className="text-3xl font-black text-gray-900 mt-2 tracking-tighter">{activeBook?.title || 'Sin libro activo'}</h2>
-            <div className="flex gap-2 mt-4">
+        <main className="w-full md:w-[64%] p-5 md:p-8 overflow-y-auto">
+          <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold uppercase tracking-wider">Manual activo</span>
+          <h2 className="text-4xl font-extrabold text-slate-900 mt-3 tracking-tight">{activeBook?.title || 'Sin libro activo'}</h2>
+          <div className="flex gap-2 mt-4">
               <button
                 type="button"
                 onClick={abrirEditorEditar}
                 disabled={guardando || !activePage}
-                className="text-xs px-3 py-1 rounded bg-blue-600 text-white font-bold hover:bg-blue-700 disabled:opacity-50"
+                className="text-xs px-3 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 disabled:opacity-50"
               >
                 ✏️ Editar Página
               </button>
@@ -245,7 +243,7 @@ export default function Wiki() {
                 type="button"
                 onClick={abrirEditorCrear}
                 disabled={guardando}
-                className="text-xs px-3 py-1 rounded bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-50"
+                className="text-xs px-3 py-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 disabled:opacity-50"
               >
                 ➕ Nueva Página
               </button>
@@ -327,8 +325,8 @@ export default function Wiki() {
             )}
           
           <div className="mt-8 space-y-4">
-            <h4 className="font-bold text-gray-800">Indice del manual</h4>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <h4 className="font-bold text-slate-800">Indice del manual</h4>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               {(activeBook?.pages || []).map((page) => (
                 <button
                   type="button"
@@ -336,20 +334,20 @@ export default function Wiki() {
                   onClick={() => setActivePage(page)}
                   className={`w-full flex gap-3 items-center p-3 rounded-lg border text-left transition-colors cursor-pointer ${
                     activePage?.id === page.id
-                      ? 'border-blue-300 bg-blue-50'
-                      : 'bg-white border-gray-100 hover:border-blue-100'
+                      ? 'border-blue-300 bg-blue-50 text-blue-900'
+                      : 'bg-white border-slate-200 hover:border-blue-100'
                   }`}
                 >
-                  <span className="text-xl">DOC</span>
-                  <p className="text-sm font-medium text-gray-800">{page.title}</p>
+                  <span className="text-sm font-bold text-slate-500">PAG</span>
+                  <p className="text-sm font-semibold text-slate-800">{page.title}</p>
                 </button>
               ))}
             </div>
 
-            <div className="mt-6 p-5 bg-slate-50 border border-slate-200 rounded-xl">
+            <div className="mt-6 p-6 bg-slate-50 border border-slate-200 rounded-2xl">
               <p className="text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-2">Página seleccionada</p>
-              <h5 className="text-lg font-black text-slate-900 mb-2">{activePage?.title || 'Sin pagina seleccionada'}</h5>
-              <p className="text-sm text-slate-700 leading-relaxed">{activePage?.body || 'Selecciona una pagina del indice para ver su contenido.'}</p>
+              <h5 className="text-2xl font-extrabold text-slate-900 mb-3">{activePage?.title || 'Sin pagina seleccionada'}</h5>
+              <p className="text-base text-slate-700 leading-relaxed">{activePage?.body || 'Selecciona una pagina del indice para ver su contenido.'}</p>
             </div>
           </div>
         </main>
