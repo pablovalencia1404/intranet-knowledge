@@ -37,22 +37,33 @@ export default function NuevoPost({ alEnviar }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300 mb-4">
-      <textarea 
+    <form onSubmit={handleSubmit} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+      <p className="text-xs uppercase tracking-[0.18em] text-blue-600 font-bold mb-2">Nuevo tema</p>
+      <textarea
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
-        placeholder="¿Qué quieres compartir?"
-        className="w-full p-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-orange-500"
-        rows="2" required
+        placeholder="Describe tu duda o propuesta para la comunidad"
+        className="w-full p-3 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        rows="4"
+        required
       />
-      <div className="flex justify-between mt-2">
-        <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="text-xs border rounded p-1">
+      <div className="flex flex-col sm:flex-row justify-between mt-3 gap-3">
+        <select
+          value={categoria}
+          onChange={(e) => setCategoria(e.target.value)}
+          className="text-sm border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 text-slate-700"
+        >
           <option value="Sugerencias">Sugerencias</option>
           <option value="Soporte">Soporte</option>
           <option value="Anuncios">Anuncios</option>
         </select>
-        <button type="submit" disabled={enviando} className="bg-orange-600 text-white px-4 py-1 rounded-lg font-bold text-xs">
-          {enviando ? "..." : "Publicar"}
+
+        <button
+          type="submit"
+          disabled={enviando}
+          className="bg-blue-600 text-white px-5 py-2 rounded-xl font-bold text-sm hover:bg-blue-700 disabled:opacity-50"
+        >
+          {enviando ? 'Publicando...' : 'Publicar tema'}
         </button>
       </div>
     </form>

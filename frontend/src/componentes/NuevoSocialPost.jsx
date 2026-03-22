@@ -44,40 +44,49 @@ export default function NuevoSocialPost({ onPostCreated }) {
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-blue-100 shadow-sm mb-8">
+    <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-sm mb-6">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex gap-4">
-          <div className="w-10 h-10 bg-blue-600 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold">A</div>
-          <textarea 
-            value={texto} // Usamos "texto"
-            onChange={(e) => setTexto(e.target.value)} // Usamos "setTexto"
-            placeholder="¿Qué está pasando en la oficina?"
-            className="w-full p-2 text-gray-700 outline-none resize-none text-sm"
+        <div className="flex gap-3 items-start">
+          <div className="w-10 h-10 bg-slate-900 rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold">
+            {JSON.parse(localStorage.getItem('usuario') || '{}')?.nombre?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+          <textarea
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="¿Qué tienes en mente hoy?"
+            className="w-full p-1 text-slate-700 outline-none resize-none text-lg placeholder:text-slate-400"
             rows="2"
             required
           />
         </div>
         
-        <div className="flex justify-between items-center border-t border-gray-50 pt-4">
-          <label className="flex items-center gap-2 text-xs font-bold text-gray-500 cursor-pointer hover:text-blue-600">
-            <span>Añadir foto</span>
-            <input 
-              type="file" 
-              className="hidden" 
-              onChange={(e) => setImage(e.target.files[0])}
-              accept="image/*"
-            />
-          </label>
-          
-          <button 
+        <div className="flex justify-between items-center border-t border-slate-100 pt-4">
+          <div className="flex items-center gap-4 text-sm text-slate-500">
+            <label className="flex items-center gap-2 cursor-pointer hover:text-blue-600 font-medium">
+              <span>🖼️ Añadir foto</span>
+              <input
+                type="file"
+                className="hidden"
+                onChange={(e) => setImage(e.target.files[0])}
+                accept="image/*"
+              />
+            </label>
+
+            <span className="font-medium">📎 Archivo</span>
+          </div>
+
+          <button
             type="submit"
             disabled={enviando}
-            className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold text-xs hover:bg-blue-700"
+            className="bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 disabled:opacity-50"
           >
-            {enviando ? "Cargando..." : "Publicar"}
+            {enviando ? 'Publicando...' : 'Publicar'}
           </button>
         </div>
-        {image && <p className="text-[10px] text-green-600 font-bold">Foto: {image.name}</p>}
+
+        {image && (
+          <p className="text-xs text-emerald-700 font-semibold">Imagen seleccionada: {image.name}</p>
+        )}
       </form>
     </div>
   );
