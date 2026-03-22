@@ -84,27 +84,6 @@ function esSaludoSimple(string $texto): bool {
     return strlen($normalizado) <= 20 && preg_match('/^(hola|hi|hello|buenas)/', $normalizado) === 1;
 }
 
-function construirRespuestaContingencia(string $pregunta, array $sources): string {
-    if (empty($sources)) {
-        return "Estoy tardando mas de lo normal y no pude consultar el motor IA a tiempo. "
-            . "Prueba con una pregunta mas concreta o vuelve a intentar en unos segundos.";
-    }
-
-    $lineas = [];
-    foreach (array_slice($sources, 0, 3) as $src) {
-        $tipo = $src['tipo'] ?? 'fuente';
-        $titulo = $src['titulo'] ?? 'sin titulo';
-        $resumen = truncarTexto((string)($src['resumen'] ?? ''), 110);
-        $lineas[] = "- [" . $tipo . "] " . $titulo . ($resumen !== '' ? ": " . $resumen : '');
-    }
-
-    return "No he podido generar una respuesta completa por latencia del modelo. "
-        . "Te dejo el contexto mas relevante para tu pregunta ('" . truncarTexto($pregunta, 60) . "'):\n"
-        . implode("\n", $lineas)
-        . "\n\nFuentes consultadas: "
-        . implode(', ', array_map(fn($s) => (string)($s['titulo'] ?? 'fuente'), array_slice($sources, 0, 3)));
-}
-
 function construirContextoInterno($db, string $pregunta, string $rol): array {
     $keywords = extraerKeywords($pregunta);
     $lineas = [];
@@ -300,49 +279,7 @@ $timeoutAnything = max(12, min($timeoutAnything, 30));
 $timeoutOllama = OLLAMA_TIMEOUT_SECONDS > 0 ? OLLAMA_TIMEOUT_SECONDS : $timeoutGlobal;
 $timeoutOllama = max(8, min($timeoutOllama, 30));
 
-// 1) Intento principal: AnythingLLM
-$payload = json_encode([
-    'message' => $mensajeFinal,
-    'mode' => 'chat'
-], JSON_UNESCAPED_UNICODE);
-
-$ch = curl_init($url);
-$headers = ['Content-Type: application/json'];
-if (ANYTHINGLLM_API_KEY !== '') {
-    $headers[] = 'Authorization: Bearer ' . ANYTHINGLLM_API_KEY;
-}
-
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST => true,
-    CURLOPT_HTTPHEADER => $headers,
-    CURLOPT_POSTFIELDS => $payload,
-    CURLOPT_CONNECTTIMEOUT => 3,
-    CURLOPT_TIMEOUT => $timeoutAnything
-]);
-
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$curlError = curl_error($ch);
-curl_close($ch);
-
-$data = is_string($response) ? json_decode($response, true) : null;
-$ok = (!$curlError) && is_array($data) && $httpCode >= 200 && $httpCode < 300;
-
-if ($ok) {
-    $text = $data['textResponse'] ?? $data['response'] ?? $data['text'] ?? 'No se recibió texto del asistente.';
-    echo json_encode([
-        'ok' => true,
-        'error' => null,
-        'text' => $text,
-        'sources' => $sources,
-        'engine' => 'anythingllm',
-        'raw' => $data
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-// 2) Fallback rapido: Ollama directo con reintento de modelo conocido
+// 1) Camino rapido: Ollama directo con prompt compacto
 $ollamaUrl = rtrim(OLLAMA_BASE_URL, '/') . '/api/generate';
 $modelos = array_values(array_unique([
     OLLAMA_MODEL,
@@ -406,25 +343,64 @@ foreach ($modelos as $modeloIntento) {
     }
 }
 
-if (!is_array($data2) || empty($data2['response']) || $httpCode2 < 200 || $httpCode2 >= 300) {
-    $fallbackText = construirRespuestaContingencia($message, $sources);
+if (is_array($data2) && !empty($data2['response']) && $httpCode2 >= 200 && $httpCode2 < 300) {
+    $text2 = $data2['response'];
     echo json_encode([
         'ok' => true,
         'error' => null,
-        'text' => $fallbackText,
+        'text' => $text2,
         'sources' => $sources,
-        'engine' => 'fallback-context',
-        'raw_anythingllm' => is_array($data) ? $data : $response,
-        'raw_ollama' => $response2
+        'engine' => 'ollama' . ($modeloUsado ? ':' . $modeloUsado : '')
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$text2 = $data2['response'];
+// 2) Fallback: AnythingLLM (mas lento, pero puede salvar respuesta)
+$payload = json_encode([
+    'message' => $mensajeFinal,
+    'mode' => 'chat'
+], JSON_UNESCAPED_UNICODE);
+
+$ch = curl_init($url);
+$headers = ['Content-Type: application/json'];
+if (ANYTHINGLLM_API_KEY !== '') {
+    $headers[] = 'Authorization: Bearer ' . ANYTHINGLLM_API_KEY;
+}
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => $headers,
+    CURLOPT_POSTFIELDS => $payload,
+    CURLOPT_CONNECTTIMEOUT => 3,
+    CURLOPT_TIMEOUT => $timeoutAnything
+]);
+
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$curlError = curl_error($ch);
+curl_close($ch);
+
+$data = is_string($response) ? json_decode($response, true) : null;
+$ok = (!$curlError) && is_array($data) && $httpCode >= 200 && $httpCode < 300;
+
+if ($ok) {
+    $text = $data['textResponse'] ?? $data['response'] ?? $data['text'] ?? 'No se recibió texto del asistente.';
+    echo json_encode([
+        'ok' => true,
+        'error' => null,
+        'text' => $text,
+        'sources' => $sources,
+        'engine' => 'anythingllm',
+        'raw' => $data
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 echo json_encode([
     'ok' => true,
     'error' => null,
-    'text' => $text2,
+    'text' => 'Ahora mismo el motor esta saturado. Prueba de nuevo en 5-10 segundos con una pregunta mas concreta.',
     'sources' => $sources,
-    'engine' => 'ollama' . ($modeloUsado ? ':' . $modeloUsado : '')
+    'engine' => 'degraded'
 ], JSON_UNESCAPED_UNICODE);

@@ -26,11 +26,11 @@ if (!defined('LLM_TIMEOUT_SECONDS')) {
 }
 
 if (!defined('ANYTHINGLLM_TIMEOUT_SECONDS')) {
-	define('ANYTHINGLLM_TIMEOUT_SECONDS', (int)(getenv('ANYTHINGLLM_TIMEOUT_SECONDS') ?: 15));
+	define('ANYTHINGLLM_TIMEOUT_SECONDS', (int)(getenv('ANYTHINGLLM_TIMEOUT_SECONDS') ?: 12));
 }
 
 if (!defined('OLLAMA_TIMEOUT_SECONDS')) {
-	define('OLLAMA_TIMEOUT_SECONDS', (int)(getenv('OLLAMA_TIMEOUT_SECONDS') ?: 18));
+	define('OLLAMA_TIMEOUT_SECONDS', (int)(getenv('OLLAMA_TIMEOUT_SECONDS') ?: 12));
 }
 
 if (!defined('CHATBOT_CONTEXT_MAX_CHARS')) {
@@ -38,10 +38,10 @@ if (!defined('CHATBOT_CONTEXT_MAX_CHARS')) {
 }
 
 if (!defined('OLLAMA_NUM_CTX')) {
-	define('OLLAMA_NUM_CTX', (int)(getenv('OLLAMA_NUM_CTX') ?: 1024));
+	define('OLLAMA_NUM_CTX', (int)(getenv('OLLAMA_NUM_CTX') ?: 768));
 }
 
 if (!defined('OLLAMA_NUM_PREDICT')) {
-	define('OLLAMA_NUM_PREDICT', (int)(getenv('OLLAMA_NUM_PREDICT') ?: 180));
+	define('OLLAMA_NUM_PREDICT', (int)(getenv('OLLAMA_NUM_PREDICT') ?: 96));
 }
 ?>
