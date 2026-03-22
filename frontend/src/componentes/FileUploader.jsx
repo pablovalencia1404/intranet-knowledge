@@ -18,6 +18,7 @@ export default function FileUploader({ onUploadSuccess }) {
     formData.append('archivo', file);
     formData.append('titulo', file.name);
     formData.append('usuario_id', usuario?.id || 'anonimo');
+    formData.append('usuario_nombre', usuario?.nombre || 'Usuario');
     formData.append('categoria', 'general');
 
     try {

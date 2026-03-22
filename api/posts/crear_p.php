@@ -16,7 +16,10 @@ if (stripos($contentType, 'application/json') !== false) {
 
 $contenido = trim($datos['contenido'] ?? $datos['content'] ?? '');
 $usuarioId = trim($datos['usuario_id'] ?? $datos['user'] ?? $datos['usuario'] ?? '');
+$usuarioNombre = trim($datos['usuario_nombre'] ?? $datos['nombre'] ?? 'Usuario');
 $tituloHilo = trim($datos['titulo_hilo'] ?? $datos['categoria'] ?? 'General');
+$temaPadreId = trim($datos['tema_padre_id'] ?? '');
+$tipo = trim($datos['tipo'] ?? 'tema');
 
 if ($contenido === '' || $usuarioId === '') {
     echo json_encode(["status" => "error", "msj" => "El comentario no puede estar vacío"]);
@@ -25,13 +28,20 @@ if ($contenido === '' || $usuarioId === '') {
 
 $post = [
     "usuario_id" => $usuarioId,
-    "user" => $usuarioId,
+    "user" => $usuarioNombre,
+    "usuario" => $usuarioNombre,
     "contenido" => $contenido,
     "content" => $contenido,
     "titulo_hilo" => $tituloHilo,
     "categoria" => $tituloHilo,
-    "fecha" => gmdate('c')
+    "fecha" => gmdate('c'),
+    "tipo" => $tipo
 ];
+
+// Si es una respuesta, agregar el ID del tema padre
+if ($temaPadreId !== '') {
+    $post["tema_padre_id"] = $temaPadreId;
+}
 
 $resultado = $coleccion->insertOne($post);
 echo json_encode([

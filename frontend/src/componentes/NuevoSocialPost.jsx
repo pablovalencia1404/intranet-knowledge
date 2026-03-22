@@ -15,6 +15,7 @@ export default function NuevoSocialPost({ onPostCreated }) {
     const payload = {
       contenido: texto,
       usuario_id: usuario?.id || 'anonimo',
+      usuario_nombre: usuario?.nombre || 'Usuario',
       titulo_hilo: 'Muro social',
     };
 

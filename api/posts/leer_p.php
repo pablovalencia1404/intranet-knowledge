@@ -5,5 +5,33 @@ require_once __DIR__ . '/../../config_bbdd.php';
 $db = conectarDB();
 $coleccion = $db->Comentarios; 
 
-$datos = $coleccion->find()->toArray();
-echo json_encode(["estado" => "ok", "foro" => $datos]);
+// Verificar si se solicita un tema específico
+$idTema = $_GET['id'] ?? $_POST['id'] ?? null;
+
+if ($idTema) {
+    // Buscar un tema específico por su ID
+    try {
+        $idOid = new MongoDB\BSON\ObjectId($idTema);
+        $tema = $coleccion->findOne(['_id' => $idOid]);
+        
+        if ($tema) {
+            // Buscar respuestas a este tema
+            $respuestas = $coleccion->find(['tema_padre_id' => $idTema])->toArray();
+            
+            echo json_encode([
+                "estado" => "ok", 
+                "tema" => $tema,
+                "respuestas" => $respuestas
+            ]);
+        } else {
+            echo json_encode(["estado" => "error", "mensaje" => "Tema no encontrado"]);
+        }
+    } catch (Exception $e) {
+        echo json_encode(["estado" => "error", "mensaje" => "ID inválido"]);
+    }
+} else {
+    // Devolver todos los temas (sin las respuestas)
+    $datos = $coleccion->find(['tema_padre_id' => ['$exists' => false]])->toArray();
+    echo json_encode(["estado" => "ok", "foro" => $datos]);
+}
+?>

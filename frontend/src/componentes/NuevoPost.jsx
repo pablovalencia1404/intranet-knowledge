@@ -18,6 +18,7 @@ export default function NuevoPost({ alEnviar }) {
         body: JSON.stringify({
           contenido: texto,
           usuario_id: usuario?.id || 'anonimo',
+          usuario_nombre: usuario?.nombre || 'Usuario',
           titulo_hilo: categoria,
         }),
         credentials: 'include',
@@ -25,6 +26,7 @@ export default function NuevoPost({ alEnviar }) {
 
       if (response.ok) {
         setTexto("");
+        setCategoria('Sugerencias');
         if (alEnviar) alEnviar(); 
       }
     } catch (error) {
