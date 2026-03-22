@@ -30,8 +30,8 @@ if ($idTema) {
         echo json_encode(["estado" => "error", "mensaje" => "ID inválido"]);
     }
 } else {
-    // Devolver todos los posts, pero filtrar solo los que NO sean respuestas
-    $todos = $coleccion->find()->toArray();
+    // Devolver todos los posts ordenados por fecha más reciente
+    $todos = $coleccion->find([], ['sort' => ['fecha' => -1, '_id' => -1]])->toArray();
     $temas = array_filter($todos, function($item) {
         return !isset($item['tema_padre_id']) || $item['tema_padre_id'] === null;
     });

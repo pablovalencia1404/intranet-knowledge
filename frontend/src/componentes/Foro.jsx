@@ -16,6 +16,23 @@ function fechaLegible(fechaIso) {
   return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
+function fechaEpoch(item) {
+  const fecha = item?.fecha ? new Date(item.fecha).getTime() : 0;
+  if (!Number.isNaN(fecha) && fecha > 0) {
+    return fecha;
+  }
+
+  const oid = item?._id?.$oid || item?.id || '';
+  if (typeof oid === 'string' && oid.length >= 8) {
+    const seconds = parseInt(oid.slice(0, 8), 16);
+    if (!Number.isNaN(seconds)) {
+      return seconds * 1000;
+    }
+  }
+
+  return 0;
+}
+
 export default function Foro() {
   const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [debates, setDebates] = useState([]);
@@ -116,9 +133,9 @@ export default function Foro() {
       list.sort((a, b) => b.actividad - a.actividad);
     } else if (filtro === 'sin-respuesta') {
       list = list.filter((d) => d.replies === 0 && d.comentarios === 0);
-      list.sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
+      list.sort((a, b) => fechaEpoch(b) - fechaEpoch(a));
     } else {
-      list.sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
+      list.sort((a, b) => fechaEpoch(b) - fechaEpoch(a));
     }
 
     return list;
