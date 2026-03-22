@@ -21,10 +21,11 @@ export default function Wiki() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
-    const [modoEdicion, setModoEdicion] = useState(false);
-    const [guardando, setGuardando] = useState(false);
-    const [editTitle, setEditTitle] = useState('');
-    const [editBody, setEditBody] = useState('');
+  const [modoEditor, setModoEditor] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editBody, setEditBody] = useState('');
+  const [mensajeEdicion, setMensajeEdicion] = useState('');
 
   useEffect(() => {
     const cargarWiki = async () => {
@@ -82,97 +83,109 @@ export default function Wiki() {
   const handleBookChange = (libro) => {
     setActiveBook(libro);
     setActivePage(libro.pages?.[0] || null);
+    setMensajeEdicion('');
   };
 
-    const iniciarEdicion = () => {
-      setEditTitle(activePage?.title || '');
-      setEditBody(activePage?.body || '');
-      setModoEdicion(true);
-    };
+  const abrirEditorCrear = () => {
+    setMensajeEdicion('');
+    setEditTitle('');
+    setEditBody('');
+    setModoEditor('crear');
+  };
 
-    const cancelarEdicion = () => {
-      setModoEdicion(false);
-      setEditTitle('');
-      setEditBody('');
-    };
+  const abrirEditorEditar = () => {
+    if (!activePage) {
+      return;
+    }
 
-    const guardarCambios = async () => {
-      try {
-        setGuardando(true);
-      
-        // Actualizar página actual en el estado
-        const librosActualizados = biblioteca.map(libro => {
-          if (libro.id === activeBook.id) {
-            return {
-              ...libro,
-              pages: libro.pages.map(page => 
-                page.id === activePage.id 
-                  ? { ...page, title: editTitle, body: editBody }
-                  : page
-              )
-            };
-          }
+    setMensajeEdicion('');
+    setEditTitle(activePage.title || '');
+    setEditBody(activePage.body || '');
+    setModoEditor('editar');
+  };
+
+  const cerrarEditor = () => {
+    setModoEditor(null);
+    setEditTitle('');
+    setEditBody('');
+  };
+
+  const guardarPagina = async () => {
+    const tituloLimpio = editTitle.trim();
+    const cuerpoLimpio = editBody.trim();
+
+    if (!tituloLimpio) {
+      setMensajeEdicion('El titulo es obligatorio.');
+      return;
+    }
+
+    if (!cuerpoLimpio) {
+      setMensajeEdicion('El contenido es obligatorio.');
+      return;
+    }
+
+    try {
+      setGuardando(true);
+      setMensajeEdicion('');
+
+      let nuevaPaginaActivaId = activePage?.id || null;
+
+      const librosActualizados = biblioteca.map((libro) => {
+        if (libro.id !== activeBook.id) {
           return libro;
-        });
+        }
 
-        setBiblioteca(librosActualizados);
-        setActivePage({ ...activePage, title: editTitle, body: editBody });
+        if (modoEditor === 'crear') {
+          const nuevaPaginaId = `page-${Date.now()}`;
+          nuevaPaginaActivaId = nuevaPaginaId;
+          return {
+            ...libro,
+            pages: [
+              ...libro.pages,
+              { id: nuevaPaginaId, title: tituloLimpio, body: cuerpoLimpio }
+            ],
+          };
+        }
 
-        // Guardar en servidor
-        const res = await fetch(`${API_URL}/wiki/crear_w.php`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ biblioteca: librosActualizados })
-        });
+        return {
+          ...libro,
+          pages: libro.pages.map((page) => (
+            page.id === activePage?.id
+              ? { ...page, title: tituloLimpio, body: cuerpoLimpio }
+              : page
+          )),
+        };
+      });
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      
-        setModoEdicion(false);
-        alert('✅ Página actualizada correctamente');
-      } catch (err) {
-        alert('❌ Error al guardar: ' + err.message);
-      } finally {
-        setGuardando(false);
+      const res = await fetch(`${API_URL}/wiki/crear_w.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ biblioteca: librosActualizados }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
       }
-    };
 
-    const agregarPagina = async () => {
-      const titulo = prompt('Título de la nueva página:');
-      if (!titulo) return;
+      setBiblioteca(librosActualizados);
 
-      const nuevaId = `page-${Date.now()}`;
-      const librosActualizados = biblioteca.map(libro => 
-        libro.id === activeBook.id 
-          ? {
-              ...libro,
-              pages: [...libro.pages, { id: nuevaId, title: titulo, body: 'Contenido a completar...' }]
-            }
-          : libro
-      );
+      const libroActualizado = librosActualizados.find((libro) => libro.id === activeBook.id) || activeBook;
+      setActiveBook(libroActualizado);
 
-      try {
-        setGuardando(true);
+      const paginaActualizada = libroActualizado.pages.find((page) => page.id === nuevaPaginaActivaId)
+        || libroActualizado.pages[0]
+        || null;
+      setActivePage(paginaActualizada);
 
-        const res = await fetch(`${API_URL}/wiki/crear_w.php`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ biblioteca: librosActualizados })
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      
-        setBiblioteca(librosActualizados);
-        const nuevaPagina = librosActualizados.find(l => l.id === activeBook.id).pages.find(p => p.id === nuevaId);
-        setActivePage(nuevaPagina);
-        alert('✅ Página creada correctamente');
-      } catch (err) {
-        alert('❌ Error al crear página: ' + err.message);
-      } finally {
-        setGuardando(false);
-      }
-    };
+      setMensajeEdicion(modoEditor === 'crear' ? 'Pagina creada correctamente.' : 'Pagina actualizada correctamente.');
+      cerrarEditor();
+    } catch (err) {
+      setMensajeEdicion(`No se pudo guardar la pagina: ${err.message}`);
+    } finally {
+      setGuardando(false);
+    }
+  };
   if (cargando) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 my-6 min-h-[70vh] flex items-center justify-center">
@@ -222,21 +235,24 @@ export default function Wiki() {
             <div className="flex gap-2 mt-4">
               <button
                 type="button"
-                onClick={iniciarEdicion}
-                disabled={guardando}
+                onClick={abrirEditorEditar}
+                disabled={guardando || !activePage}
                 className="text-xs px-3 py-1 rounded bg-blue-600 text-white font-bold hover:bg-blue-700 disabled:opacity-50"
               >
                 ✏️ Editar Página
               </button>
               <button
                 type="button"
-                onClick={agregarPagina}
+                onClick={abrirEditorCrear}
                 disabled={guardando}
                 className="text-xs px-3 py-1 rounded bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-50"
               >
                 ➕ Nueva Página
               </button>
             </div>
+          {mensajeEdicion && (
+            <p className="mt-2 text-xs text-slate-600">{mensajeEdicion}</p>
+          )}
           {error && (
             <div className="mt-2 flex items-center gap-3">
               <p className="text-xs text-amber-700">{error}</p>
@@ -250,14 +266,16 @@ export default function Wiki() {
             </div>
           )}
 
-            {modoEdicion && (
+            {modoEditor && (
               <div className="fixed inset-0 bg-black/40 flex items-end z-50">
                 <div className="bg-white w-full md:w-2/3 rounded-t-2xl p-6 space-y-4 animate-in slide-in-from-bottom">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold">Editar Página</h3>
+                    <h3 className="text-xl font-bold">
+                      {modoEditor === 'crear' ? 'Nueva Pagina' : 'Editar Pagina'}
+                    </h3>
                     <button
                       type="button"
-                      onClick={cancelarEdicion}
+                      onClick={cerrarEditor}
                       className="text-2xl text-gray-400 hover:text-gray-600"
                     >
                       ✕
@@ -289,7 +307,7 @@ export default function Wiki() {
                   <div className="flex gap-2 justify-end">
                     <button
                       type="button"
-                      onClick={cancelarEdicion}
+                      onClick={cerrarEditor}
                       disabled={guardando}
                       className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-50 disabled:opacity-50"
                     >
@@ -297,7 +315,7 @@ export default function Wiki() {
                     </button>
                     <button
                       type="button"
-                      onClick={guardarCambios}
+                      onClick={guardarPagina}
                       disabled={guardando}
                       className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50"
                     >
