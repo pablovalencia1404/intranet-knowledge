@@ -30,8 +30,12 @@ if ($idTema) {
         echo json_encode(["estado" => "error", "mensaje" => "ID inválido"]);
     }
 } else {
-    // Devolver todos los temas (sin las respuestas)
-    $datos = $coleccion->find(['tema_padre_id' => ['$exists' => false]])->toArray();
-    echo json_encode(["estado" => "ok", "foro" => $datos]);
+    // Devolver todos los posts, pero filtrar solo los que NO sean respuestas
+    $todos = $coleccion->find()->toArray();
+    $temas = array_filter($todos, function($item) {
+        return !isset($item['tema_padre_id']) || $item['tema_padre_id'] === null;
+    });
+    
+    echo json_encode(["estado" => "ok", "foro" => array_values($temas)]);
 }
 ?>
