@@ -37,21 +37,14 @@ export default function ChatbotWidget({ usuario }) {
   }, []);
 
   const historial = useMemo(() => {
-    const preguntas = mensajes
-      .filter((msg) => msg.rol === 'user')
-      .slice(-4)
-      .reverse()
-      .map((msg, idx) => ({
-        id: `h-${idx}`,
-        titulo: msg.texto.length > 28 ? `${msg.texto.slice(0, 28)}...` : msg.texto,
-        fecha: idx === 0 ? 'Hoy' : 'Reciente',
-      }));
-
-    return [
-      ...preguntas,
-      { id: 'seed-1', titulo: 'Manual de Onboarding IT', fecha: 'Ayer' },
-      { id: 'seed-2', titulo: 'Configuracion VPN', fecha: 'Oct 24' },
-    ];
+    const primeraPregunta = mensajes.find((msg) => msg.rol === 'user');
+    return [{
+      id: 'h-current',
+      titulo: primeraPregunta
+        ? (primeraPregunta.texto.length > 38 ? `${primeraPregunta.texto.slice(0, 38)}...` : primeraPregunta.texto)
+        : 'Conversacion actual',
+      fecha: 'Hoy',
+    }];
   }, [mensajes]);
 
   if (!usuario) {
