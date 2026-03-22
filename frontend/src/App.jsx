@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './componentes/Navbar';
 import StatsGrid from './componentes/StatsGrid';
@@ -27,6 +27,94 @@ function App() {
   const API_URL = import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [mostrarAvisoSesion, setMostrarAvisoSesion] = useState(false);
+  const [segundosRestantes, setSegundosRestantes] = useState(60);
+  const timeoutInactividadRef = useRef(null);
+  const intervaloAvisoRef = useRef(null);
+  const avisoActivoRef = useRef(false);
+
+  const limpiarTemporizadores = () => {
+    if (timeoutInactividadRef.current) {
+      clearTimeout(timeoutInactividadRef.current);
+      timeoutInactividadRef.current = null;
+    }
+    if (intervaloAvisoRef.current) {
+      clearInterval(intervaloAvisoRef.current);
+      intervaloAvisoRef.current = null;
+    }
+  };
+
+  const cerrarSesion = async () => {
+    try {
+      await fetch(`${API_URL}/usuarios/logout_u.php`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (err) {
+      console.error('Error al cerrar sesión:', err);
+    } finally {
+      setUsuario(null);
+      localStorage.removeItem('usuario');
+      setMostrarAvisoSesion(false);
+      avisoActivoRef.current = false;
+      limpiarTemporizadores();
+    }
+  };
+
+  const iniciarAvisoExpiracion = () => {
+    if (avisoActivoRef.current || !usuario) {
+      return;
+    }
+
+    avisoActivoRef.current = true;
+    setMostrarAvisoSesion(true);
+    setSegundosRestantes(60);
+
+    intervaloAvisoRef.current = setInterval(() => {
+      setSegundosRestantes((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervaloAvisoRef.current);
+          intervaloAvisoRef.current = null;
+          cerrarSesion();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const reiniciarTemporizadorInactividad = () => {
+    if (!usuario || avisoActivoRef.current) {
+      return;
+    }
+
+    if (timeoutInactividadRef.current) {
+      clearTimeout(timeoutInactividadRef.current);
+    }
+
+    timeoutInactividadRef.current = setTimeout(() => {
+      iniciarAvisoExpiracion();
+    }, 30 * 60 * 1000);
+  };
+
+  const confirmarContinuarSesion = async () => {
+    try {
+      // Refresca la marca de actividad en backend
+      await fetch(`${API_URL}/usuarios/verificar_sesion.php`, {
+        credentials: 'include',
+      });
+    } catch (err) {
+      console.error('No se pudo refrescar la sesión:', err);
+    }
+
+    setMostrarAvisoSesion(false);
+    avisoActivoRef.current = false;
+    if (intervaloAvisoRef.current) {
+      clearInterval(intervaloAvisoRef.current);
+      intervaloAvisoRef.current = null;
+    }
+    reiniciarTemporizadorInactividad();
+  };
 
   useEffect(() => {
     // Verificar sesión al cargar
@@ -39,27 +127,46 @@ function App() {
         if (datos.status === 'autenticado') {
           setUsuario(datos.usuario);
           localStorage.setItem('usuario', JSON.stringify(datos.usuario));
+        } else {
+          setUsuario(null);
+          localStorage.removeItem('usuario');
         }
       } catch (err) {
         console.log('No hay sesión activa');
+        setUsuario(null);
+        localStorage.removeItem('usuario');
       } finally {
         setCargando(false);
       }
     };
-
-    // También verificar localStorage
-    const usuarioLocal = localStorage.getItem('usuario');
-    if (usuarioLocal) {
-      setUsuario(JSON.parse(usuarioLocal));
-    }
     
     verificarSesion();
-  }, []);
+  }, [API_URL]);
 
-  const handleLogout = () => {
-    setUsuario(null);
-    localStorage.removeItem('usuario');
-  };
+  useEffect(() => {
+    if (!usuario) {
+      limpiarTemporizadores();
+      setMostrarAvisoSesion(false);
+      avisoActivoRef.current = false;
+      return;
+    }
+
+    const eventosActividad = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    const onActividad = () => reiniciarTemporizadorInactividad();
+
+    eventosActividad.forEach((evento) => {
+      window.addEventListener(evento, onActividad);
+    });
+
+    reiniciarTemporizadorInactividad();
+
+    return () => {
+      eventosActividad.forEach((evento) => {
+        window.removeEventListener(evento, onActividad);
+      });
+      limpiarTemporizadores();
+    };
+  }, [usuario]);
 
   if (cargando) {
     return (
@@ -72,7 +179,7 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
-        {usuario && <Navbar usuario={usuario} onLogout={handleLogout} />}
+        {usuario && <Navbar usuario={usuario} onLogout={cerrarSesion} />}
         <main className={usuario ? "max-w-5xl mx-auto p-6" : ""}>
           <Routes>
             <Route path="/login" element={<Login onLogin={setUsuario} />} />
@@ -103,6 +210,37 @@ function App() {
             } />
           </Routes>
         </main>
+
+        {mostrarAvisoSesion && (
+          <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-white rounded-xl shadow-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-bold text-gray-900">¿Sigues ahí?</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Tu sesión se cerrará por inactividad en <span className="font-bold text-red-600">{segundosRestantes}s</span>.
+              </p>
+              <p className="mt-1 text-sm text-gray-600">
+                Pulsa el botón para mantener la sesión activa.
+              </p>
+
+              <div className="mt-5 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={cerrarSesion}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  Cerrar ahora
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmarContinuarSesion}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                >
+                  Seguir conectado
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Router>
   );

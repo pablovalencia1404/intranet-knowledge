@@ -1,8 +1,9 @@
 <?php
 header("Content-Type: application/json");
 require_once __DIR__ . '/../../config_bbdd.php';
+require_once __DIR__ . '/session_config.php';
 
-session_start();
+iniciarSesionSegura();
 
 $db = conectarDB();
 $coleccion = $db->Usuarios;
@@ -30,10 +31,12 @@ if (!isset($usuario['contraseña']) || !password_verify($datos['contraseña'], $
 }
 
 // Iniciar sesión
+session_regenerate_id(true);
 $_SESSION['usuario_id'] = (string)$usuario['_id'];
 $_SESSION['usuario_nombre'] = $usuario['nombre'];
 $_SESSION['usuario_email'] = $usuario['email'];
 $_SESSION['usuario_rol'] = $usuario['rol'] ?? 'user';
+$_SESSION['ultima_actividad'] = time();
 
 echo json_encode([
     "status" => "success",

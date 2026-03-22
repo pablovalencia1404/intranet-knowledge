@@ -23,8 +23,8 @@ try {
     // Insertar nuevos documentos
     $coleccion->insertOne([
         "biblioteca" => $input['biblioteca'],
-        "actualizado_en" => new MongoDB\BSON\UTCDateTime(time() * 1000),
-        "versión" => "1.0"
+        "actualizado_en" => date('c'),
+        "version" => "1.0"
     ]);
 
     echo json_encode([
