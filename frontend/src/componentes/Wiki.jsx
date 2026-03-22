@@ -21,6 +21,10 @@ export default function Wiki() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+    const [modoEdicion, setModoEdicion] = useState(false);
+    const [guardando, setGuardando] = useState(false);
+    const [editTitle, setEditTitle] = useState('');
+    const [editBody, setEditBody] = useState('');
 
   useEffect(() => {
     const cargarWiki = async () => {
@@ -80,6 +84,95 @@ export default function Wiki() {
     setActivePage(libro.pages?.[0] || null);
   };
 
+    const iniciarEdicion = () => {
+      setEditTitle(activePage?.title || '');
+      setEditBody(activePage?.body || '');
+      setModoEdicion(true);
+    };
+
+    const cancelarEdicion = () => {
+      setModoEdicion(false);
+      setEditTitle('');
+      setEditBody('');
+    };
+
+    const guardarCambios = async () => {
+      try {
+        setGuardando(true);
+      
+        // Actualizar página actual en el estado
+        const librosActualizados = biblioteca.map(libro => {
+          if (libro.id === activeBook.id) {
+            return {
+              ...libro,
+              pages: libro.pages.map(page => 
+                page.id === activePage.id 
+                  ? { ...page, title: editTitle, body: editBody }
+                  : page
+              )
+            };
+          }
+          return libro;
+        });
+
+        setBiblioteca(librosActualizados);
+        setActivePage({ ...activePage, title: editTitle, body: editBody });
+
+        // Guardar en servidor
+        const res = await fetch(`${API_URL}/wiki/crear_w.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ biblioteca: librosActualizados })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
+        setModoEdicion(false);
+        alert('✅ Página actualizada correctamente');
+      } catch (err) {
+        alert('❌ Error al guardar: ' + err.message);
+      } finally {
+        setGuardando(false);
+      }
+    };
+
+    const agregarPagina = async () => {
+      const titulo = prompt('Título de la nueva página:');
+      if (!titulo) return;
+
+      const nuevaId = `page-${Date.now()}`;
+      const librosActualizados = biblioteca.map(libro => 
+        libro.id === activeBook.id 
+          ? {
+              ...libro,
+              pages: [...libro.pages, { id: nuevaId, title: titulo, body: 'Contenido a completar...' }]
+            }
+          : libro
+      );
+
+      try {
+        setGuardando(true);
+
+        const res = await fetch(`${API_URL}/wiki/crear_w.php`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ biblioteca: librosActualizados })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
+        setBiblioteca(librosActualizados);
+        const nuevaPagina = librosActualizados.find(l => l.id === activeBook.id).pages.find(p => p.id === nuevaId);
+        setActivePage(nuevaPagina);
+        alert('✅ Página creada correctamente');
+      } catch (err) {
+        alert('❌ Error al crear página: ' + err.message);
+      } finally {
+        setGuardando(false);
+      }
+    };
   if (cargando) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 my-6 min-h-[70vh] flex items-center justify-center">
@@ -126,6 +219,24 @@ export default function Wiki() {
         <main className="w-full md:w-2/3 p-8 overflow-y-auto">
           <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider">Libro Activo</span>
           <h2 className="text-3xl font-black text-gray-900 mt-2 tracking-tighter">{activeBook?.title || 'Sin libro activo'}</h2>
+            <div className="flex gap-2 mt-4">
+              <button
+                type="button"
+                onClick={iniciarEdicion}
+                disabled={guardando}
+                className="text-xs px-3 py-1 rounded bg-blue-600 text-white font-bold hover:bg-blue-700 disabled:opacity-50"
+              >
+                ✏️ Editar Página
+              </button>
+              <button
+                type="button"
+                onClick={agregarPagina}
+                disabled={guardando}
+                className="text-xs px-3 py-1 rounded bg-green-600 text-white font-bold hover:bg-green-700 disabled:opacity-50"
+              >
+                ➕ Nueva Página
+              </button>
+            </div>
           {error && (
             <div className="mt-2 flex items-center gap-3">
               <p className="text-xs text-amber-700">{error}</p>
@@ -138,6 +249,64 @@ export default function Wiki() {
               </button>
             </div>
           )}
+
+            {modoEdicion && (
+              <div className="fixed inset-0 bg-black/40 flex items-end z-50">
+                <div className="bg-white w-full md:w-2/3 rounded-t-2xl p-6 space-y-4 animate-in slide-in-from-bottom">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold">Editar Página</h3>
+                    <button
+                      type="button"
+                      onClick={cancelarEdicion}
+                      className="text-2xl text-gray-400 hover:text-gray-600"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-gray-600">Título</label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                      placeholder="Título de la página"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-gray-600">Contenido</label>
+                    <textarea
+                      value={editBody}
+                      onChange={(e) => setEditBody(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none"
+                      rows="10"
+                      placeholder="Escribe el contenido aquí..."
+                    />
+                  </div>
+
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      type="button"
+                      onClick={cancelarEdicion}
+                      disabled={guardando}
+                      className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={guardarCambios}
+                      disabled={guardando}
+                      className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {guardando ? '⏳ Guardando...' : '💾 Guardar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           
           <div className="mt-8 space-y-4">
             <h4 className="font-bold text-gray-800">Indice del manual</h4>
