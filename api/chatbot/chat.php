@@ -18,11 +18,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 require_once __DIR__ . '/../../config.php';
 
-if (!defined('ANYTHINGLLM_BASE_URL') || !defined('ANYTHINGLLM_WORKSPACE_SLUG') || !defined('ANYTHINGLLM_API_KEY')) {
+if (ANYTHINGLLM_BASE_URL === '' || ANYTHINGLLM_WORKSPACE_SLUG === '') {
     http_response_code(500);
     echo json_encode([
         'ok' => false,
-        'error' => 'Falta configurar ANYTHINGLLM_BASE_URL, ANYTHINGLLM_WORKSPACE_SLUG y/o ANYTHINGLLM_API_KEY en config.php'
+        'error' => 'Falta configurar ANYTHINGLLM_BASE_URL y/o ANYTHINGLLM_WORKSPACE_SLUG en config.php/.env'
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -47,13 +47,18 @@ $payload = json_encode([
 
 $ch = curl_init($url);
 
+$headers = [
+    'Content-Type: application/json'
+];
+
+if (ANYTHINGLLM_API_KEY !== '') {
+    $headers[] = 'Authorization: Bearer ' . ANYTHINGLLM_API_KEY;
+}
+
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_POST => true,
-    CURLOPT_HTTPHEADER => [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . ANYTHINGLLM_API_KEY
-    ],
+    CURLOPT_HTTPHEADER => $headers,
     CURLOPT_POSTFIELDS => $payload,
     CURLOPT_TIMEOUT => 60
 ]);

@@ -7,6 +7,30 @@ services:
     ports:
       - "80:80"
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  anythingllm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: anythingllm
+    ports:
+      - "3001:3001"
+    environment:
+      STORAGE_DIR: /app/server/storage
+      OLLAMA_BASE_PATH: http://ollama:11434
+      DISABLE_TELEMETRY: "true"
+    volumes:
+      - anythingllm_storage:/app/server/storage
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
 # Base de Datos 
   mongodb:
     image: mongo:latest
@@ -27,11 +51,14 @@ services:
     ports:
       - "8080:80" 
     environment:
-      ANYTHINGLLM_BASE_URL: ${ANYTHINGLLM_BASE_URL:-}
-      ANYTHINGLLM_WORKSPACE_SLUG: ${ANYTHINGLLM_WORKSPACE_SLUG:-}
+      ANYTHINGLLM_BASE_URL: ${ANYTHINGLLM_BASE_URL:-http://anythingllm:3001}
+      ANYTHINGLLM_WORKSPACE_SLUG: ${ANYTHINGLLM_WORKSPACE_SLUG:-intranet-knowledge}
       ANYTHINGLLM_API_KEY: ${ANYTHINGLLM_API_KEY:-}
     depends_on:
       - mongodb
+      - anythingllm
 
 volumes:
   mongodb_data:
+  anythingllm_storage:
+  ollama_data:
