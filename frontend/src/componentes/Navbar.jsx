@@ -20,7 +20,6 @@ export default function Navbar({ usuario, onLogout }) {
   const navItems = [
     { to: '/wiki', label: 'Wiki' },
     { to: '/foro', label: 'Foro' },
-    { to: '/chatbot', label: 'Chatbot' },
     { to: '/documentos', label: 'Documentos' },
     { to: '/social', label: 'Red Social' },
   ];
