@@ -31,15 +31,15 @@ export default function FileUploader({ onUploadSuccess }) {
       const data = await response.json();
 
       if (response.ok && data.status === 'success') {
-        setMensaje("Archivo subido con exito.");
+        setMensaje("✅ Archivo subido con éxito.");
         setFile(null);
-        if (onUploadSuccess) onUploadSuccess(); // Para que la lista de abajo se actualice sola
+        if (onUploadSuccess) onUploadSuccess(); 
       } else {
-        setMensaje("Error al subir el archivo.");
+        setMensaje("❌ " + (data.msj || "Error al subir el archivo."));
       }
     } catch (error) {
       console.error("Error en la subida:", error);
-      setMensaje("Error de conexion con el servidor.");
+      setMensaje("❌ Error de conexión con el servidor.");
     } finally {
       setSubiendo(false);
     }
