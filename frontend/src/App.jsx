@@ -8,6 +8,7 @@ import UserProfile from './componentes/UserProfile';
 import Wiki from './componentes/Wiki';
 import Foro from './componentes/Foro';
 import Chatbot from './componentes/Chatbot';
+import ChatbotWidget from './componentes/ChatbotWidget';
 import Login from './componentes/Login';
 import Registrarse from './componentes/Registrarse';
 
@@ -245,6 +246,9 @@ function App() {
             </div>
           </div>
         )}
+
+        {/* Widget flotante del chatbot */}
+        <ChatbotWidget usuario={usuario} />
       </div>
     </Router>
   );
