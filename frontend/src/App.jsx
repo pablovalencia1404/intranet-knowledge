@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './componentes/Navbar';
 import StatsGrid from './componentes/StatsGrid';
 import SocialWall from './componentes/SocialWall';
@@ -23,6 +23,28 @@ const Mantenimiento = ({ modulo, icono }) => (
 // Componente para rutas protegidas
 const RutaProtegida = ({ element, usuario }) => {
   return usuario ? element : <Navigate to="/login" />;
+};
+
+const RouteTitleManager = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const titles = {
+      '/': 'Inicio | Intranet Knowledge',
+      '/login': 'Iniciar sesion | Intranet Knowledge',
+      '/registrarse': 'Registro | Intranet Knowledge',
+      '/social': 'Red Social | Intranet Knowledge',
+      '/documentos': 'Documentos | Intranet Knowledge',
+      '/perfil': 'Perfil | Intranet Knowledge',
+      '/wiki': 'Wiki | Intranet Knowledge',
+      '/foro': 'Foro | Intranet Knowledge',
+      '/admin': 'Analitica | Intranet Knowledge',
+    };
+
+    document.title = titles[location.pathname] || 'Intranet Knowledge';
+  }, [location.pathname]);
+
+  return null;
 };
 
 function App() {
@@ -180,6 +202,7 @@ function App() {
 
   return (
     <Router>
+      <RouteTitleManager />
       <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
         {usuario && <Navbar usuario={usuario} onLogout={cerrarSesion} />}
         <main className={usuario ? "w-full px-4 md:px-6 py-4" : ""}>
