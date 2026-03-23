@@ -50,24 +50,27 @@ export default function Foro() {
 
       const lista = Array.isArray(data?.foro) ? data.foro : [];
       const temas = lista.filter((item) => !item.tema_padre_id && String(item?.categoria || item?.titulo_hilo || '').toLowerCase() !== 'muro social');
-      const respuestas = lista.filter((item) => Boolean(item?.tema_padre_id));
 
       const countsRes = await Promise.all(
         temas.map(async (tema) => {
           const id = tema?._id?.$oid || tema?.id || '';
           if (!id) {
-            return { id: '', likes: 0, comentarios: 0 };
+            return { id: '', likes: 0, replies: 0 };
           }
           try {
-            const r = await fetch(`${API_URL}/posts/leer_lc.php?post_id=${id}`, { credentials: 'include' });
-            const json = await r.json();
+            const [likesRes, detalleRes] = await Promise.all([
+              fetch(`${API_URL}/posts/leer_lc.php?post_id=${id}`, { credentials: 'include' }).then((r) => r.json()),
+              fetch(`${API_URL}/posts/leer_p.php?id=${id}`, { credentials: 'include' }).then((r) => r.json()),
+            ]);
+
+            const respuestas = Array.isArray(detalleRes?.respuestas) ? detalleRes.respuestas : [];
             return {
               id,
-              likes: Number(json?.total_likes || 0),
-              comentarios: Number(json?.total_comentarios || 0),
+              likes: Number(likesRes?.total_likes || 0),
+              replies: respuestas.length,
             };
           } catch {
-            return { id, likes: 0, comentarios: 0 };
+            return { id, likes: 0, replies: 0 };
           }
         })
       );
@@ -81,8 +84,7 @@ export default function Foro() {
 
       const normalizados = temas.map((item, index) => {
         const id = item?._id?.$oid || item?.id || `debate-${index}`;
-        const replies = respuestas.filter((r) => String(r?.tema_padre_id || '') === String(id)).length;
-        const counts = countsMap[id] || { likes: 0, comentarios: 0 };
+        const counts = countsMap[id] || { likes: 0, replies: 0 };
 
         return {
           id,
@@ -91,10 +93,9 @@ export default function Foro() {
           user: item?.user || item?.usuario || item?.usuario_id || 'Usuario',
           cat: item?.categoria || item?.titulo_hilo || 'General',
           fecha: item?.fecha || '',
-          replies,
+          replies: counts.replies,
           likes: counts.likes,
-          comentarios: counts.comentarios,
-          actividad: replies + counts.comentarios + counts.likes,
+          actividad: counts.replies + counts.likes,
         };
       });
 
@@ -132,7 +133,7 @@ export default function Foro() {
     if (filtro === 'populares') {
       list.sort((a, b) => b.actividad - a.actividad);
     } else if (filtro === 'sin-respuesta') {
-      list = list.filter((d) => d.replies === 0 && d.comentarios === 0);
+      list = list.filter((d) => d.replies === 0);
       list.sort((a, b) => fechaEpoch(b) - fechaEpoch(a));
     } else {
       list.sort((a, b) => fechaEpoch(b) - fechaEpoch(a));
@@ -193,7 +194,6 @@ export default function Foro() {
                   <p className="mt-2 text-slate-600 text-sm leading-relaxed">{debate.excerpt}...</p>
                   <div className="mt-4 flex items-center gap-6 text-xs text-slate-500 font-semibold">
                     <span>💬 {debate.replies} respuestas</span>
-                    <span>🗨 {debate.comentarios} comentarios</span>
                     <span>❤️ {debate.likes} likes</span>
                   </div>
                 </div>
