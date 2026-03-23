@@ -68,8 +68,8 @@ export default function TemaDetalle({ temaid, onClose, onRespuestaCreada }) {
 
   if (cargando) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 bg-slate-100/45 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white/95 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
           <div className="flex justify-center">
             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
           </div>
@@ -80,8 +80,8 @@ export default function TemaDetalle({ temaid, onClose, onRespuestaCreada }) {
 
   if (!tema) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl p-6 max-w-2xl w-full">
+      <div className="fixed inset-0 bg-slate-100/45 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white/95 rounded-2xl p-6 max-w-2xl w-full border border-slate-200 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
           <p className="text-gray-600">Tema no encontrado</p>
           <button
             onClick={onClose}
@@ -95,8 +95,8 @@ export default function TemaDetalle({ temaid, onClose, onRespuestaCreada }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-100/45 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white/95 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
         {/* Cabecera de cierre */}
         <div className="flex justify-between items-start mb-6">
           <h2 className="text-2xl font-black text-gray-800">{tema.titulo_hilo || tema.contenido.substring(0, 50)}</h2>
